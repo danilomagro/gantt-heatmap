@@ -1,0 +1,19 @@
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editors
+.vscode/
+.idea/
+*.suo
+*.user
+*~
+
+# OS
+.DS_Store
+
+# Local backups
+*.bak
+pm-workload-backup*.json
