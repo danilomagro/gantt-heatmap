@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en-GB">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -31,7 +31,7 @@ function startOfMonday(d) {
   const diff = day === 0 ? -6 : 1 - day;
   r.setDate(r.getDate() + diff); r.setHours(0,0,0,0); return r;
 }
-function fmtShort(d) { return d.toLocaleDateString("it-IT", { day:"2-digit", month:"short" }); }
+function fmtShort(d) { return d.toLocaleDateString("en-GB", { day:"2-digit", month:"short" }); }
 const heatBg = n => ["#1E293B","#1E3A5F","#7C3D12","#7F1D1D","#4C0519"][Math.min(n,4)];
 const heatFg = n => n===0?"#334155": n===1?"#93C5FD": n===2?"#FDE68A":"#FCA5A5";
 
@@ -140,7 +140,7 @@ function App() {
         const d = JSON.parse(ev.target.result);
         setTasks(d.t||[]); setResources(d.r||[]); setPColors(d.c||{});
         persist(d.t||[], d.r||[], d.c||{});
-      } catch { alert("File non valido"); }
+      } catch { alert("Invalid file"); }
     };
     reader.readAsText(file);
     e.target.value = "";
@@ -166,12 +166,12 @@ function App() {
       <header style={S.header}>
         <div style={{display:"flex", alignItems:"baseline", gap:12}}>
           <span style={{fontWeight:800, fontSize:16, letterSpacing:"-0.5px", color:"#F9FAFB"}}>PM Workload Board</span>
-          <span style={{fontFamily:"monospace", fontSize:11, color:"#374151"}}>{tasks.length} attività · {resources.length} risorse</span>
+          <span style={{fontFamily:"monospace", fontSize:11, color:"#374151"}}>{tasks.length} tasks · {resources.length} resources</span>
         </div>
         <div style={{display:"flex", gap:6, flexWrap:"wrap", alignItems:"center"}}>
           {["gantt","heatmap","both"].map(v => (
             <button key={v} style={S.btn(view===v)} onClick={() => setView(v)}>
-              {v==="both"?"Entrambi":v.charAt(0).toUpperCase()+v.slice(1)}
+              {v==="both"?"Both":v.charAt(0).toUpperCase()+v.slice(1)}
             </button>
           ))}
           <div style={{width:1, height:18, background:"#1F2937", margin:"0 4px"}} />
@@ -187,7 +187,7 @@ function App() {
         {sideOpen && (
           <aside style={S.aside}>
             <div>
-              <div style={S.label}>RISORSE</div>
+              <div style={S.label}>RESOURCES</div>
               {resources.map(r => (
                 <div key={r.id} style={{...S.card, display:"flex", alignItems:"center", justifyContent:"space-between"}}>
                   <span style={{fontSize:12}}>{r.name}</span>
@@ -195,14 +195,14 @@ function App() {
                 </div>
               ))}
               <div style={{display:"flex", gap:4, marginTop:4}}>
-                <input value={newRes} onChange={e=>setNewRes(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addResource()} placeholder="Aggiungi risorsa…" style={S.input} />
+                <input value={newRes} onChange={e=>setNewRes(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addResource()} placeholder="Add resource…" style={S.input} />
                 <button onClick={addResource} style={{padding:"7px 11px", borderRadius:6, border:"none", background:"#2563EB", color:"#fff", cursor:"pointer", fontSize:16, fontWeight:700, flexShrink:0}}>+</button>
               </div>
             </div>
 
             {projects.length > 0 && (
               <div>
-                <div style={S.label}>PROGETTI</div>
+                <div style={S.label}>PROJECTS</div>
                 {projects.map(p => (
                   <div key={p} style={{display:"flex", alignItems:"center", gap:7, marginBottom:4}}>
                     <div style={{width:10, height:10, borderRadius:2, background:pColors[p], flexShrink:0}} />
@@ -213,32 +213,32 @@ function App() {
             )}
 
             <div>
-              <div style={S.label}>{form.id?"MODIFICA":"NUOVA ATTIVITÀ"}</div>
-              <input value={form.taskName} onChange={e=>setForm({...form,taskName:e.target.value})} placeholder="Nome attività" style={{...S.input, marginBottom:5}} />
-              <input value={form.projectName} onChange={e=>setForm({...form,projectName:e.target.value})} placeholder="Nome progetto" style={{...S.input, marginBottom:5}} list="projects-list" />
+              <div style={S.label}>{form.id?"EDIT TASK":"NEW TASK"}</div>
+              <input value={form.taskName} onChange={e=>setForm({...form,taskName:e.target.value})} placeholder="Task name" style={{...S.input, marginBottom:5}} />
+              <input value={form.projectName} onChange={e=>setForm({...form,projectName:e.target.value})} placeholder="Project name" style={{...S.input, marginBottom:5}} list="projects-list" />
               <datalist id="projects-list">{projects.map(p=><option key={p} value={p}/>)}</datalist>
               <select value={form.resourceId} onChange={e=>setForm({...form,resourceId:e.target.value})} style={{...S.input, marginBottom:5, color:form.resourceId?"#E2E8F0":"#4B5563"}}>
-                <option value="">Risorsa…</option>
+                <option value="">Resource…</option>
                 {resources.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
               <div style={{display:"flex", gap:4, marginBottom:8}}>
-                <input type="date" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
-                <input type="date" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
+                <input type="date" lang="en-GB" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
+                <input type="date" lang="en-GB" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
               </div>
               <button onClick={submitForm} style={{width:"100%", padding:"8px", borderRadius:6, border:"none", background:"#2563EB", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>
-                {form.id?"Salva modifiche":"Aggiungi"}
+                {form.id?"Save changes":"Add"}
               </button>
               {form.id && (
                 <button onClick={()=>setForm({id:null,taskName:"",projectName:"",resourceId:"",startDate:"",endDate:""})}
                   style={{width:"100%", padding:"6px", borderRadius:6, border:"1px solid #1F2937", background:"transparent", color:"#6B7280", fontSize:12, cursor:"pointer", marginTop:4}}>
-                  Annulla
+                  Cancel
                 </button>
               )}
             </div>
 
             {tasks.length > 0 && (
               <div style={{flex:1, overflowY:"auto"}}>
-                <div style={S.label}>ATTIVITÀ ({tasks.length})</div>
+                <div style={S.label}>TASKS ({tasks.length})</div>
                 {tasks.map(t => {
                   const res = resources.find(r=>r.id===t.resourceId);
                   const col = pColors[t.projectName]||"#3B82F6";
@@ -263,18 +263,18 @@ function App() {
           {tasks.length === 0 ? (
             <div style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"80vh", color:"#374151", gap:8}}>
               <div style={{fontSize:48}}>📊</div>
-              <div style={{fontSize:15, fontWeight:700, color:"#6B7280"}}>Nessuna attività ancora</div>
-              <div style={{fontSize:12, color:"#374151"}}>Aggiungi risorse e attività dal pannello a sinistra</div>
+              <div style={{fontSize:15, fontWeight:700, color:"#6B7280"}}>No tasks yet</div>
+              <div style={{fontSize:12, color:"#374151"}}>Add resources and tasks from the left panel</div>
             </div>
           ) : (
             <div style={{display:"flex", flexDirection:"column", gap:24}}>
 
               {(view==="gantt"||view==="both") && (
                 <div>
-                  <div style={S.sectionTitle}>GANTT — TIMELINE IMPLEMENTAZIONI</div>
+                  <div style={S.sectionTitle}>GANTT — IMPLEMENTATION TIMELINE</div>
                   <div style={S.sectionBox}>
                     <div style={{display:"flex", borderBottom:"1px solid #1F2937", background:"#0F172A"}}>
-                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"#374151", borderRight:"1px solid #1F2937"}}>Risorsa / Attività</div>
+                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"#374151", borderRight:"1px solid #1F2937"}}>Resource / Task</div>
                       <div style={{flex:1, display:"flex"}}>
                         {weeks.map((w,i) => (
                           <div key={i} style={{flex:1, padding:"7px 3px", fontSize:9, color:"#4B5563", textAlign:"center", borderRight:i<weeks.length-1?"1px solid #1F2937":"", background:i%2===0?"rgba(255,255,255,0.01)":"transparent", fontWeight:600, letterSpacing:"0.02em"}}>
@@ -337,16 +337,16 @@ function App() {
                       );
                     })}
                   </div>
-                  {todayLeft!==null && <div style={{fontSize:10, color:"#4B5563", marginTop:5}}>— Linea rossa = oggi</div>}
+                  {todayLeft!==null && <div style={{fontSize:10, color:"#4B5563", marginTop:5}}>— Red line = today</div>}
                 </div>
               )}
 
               {(view==="heatmap"||view==="both") && (
                 <div>
-                  <div style={S.sectionTitle}>HEATMAP — CARICO SETTIMANALE PER RISORSA</div>
+                  <div style={S.sectionTitle}>HEATMAP — WEEKLY LOAD BY RESOURCE</div>
                   <div style={S.sectionBox}>
                     <div style={{display:"flex", borderBottom:"1px solid #1F2937", background:"#0F172A"}}>
-                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"#374151", borderRight:"1px solid #1F2937"}}>Risorsa</div>
+                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"#374151", borderRight:"1px solid #1F2937"}}>Resource</div>
                       {weeks.map((w,i) => (
                         <div key={i} style={{flex:1, padding:"7px 3px", fontSize:9, color:"#4B5563", textAlign:"center", borderRight:i<weeks.length-1?"1px solid #1F2937":"", fontWeight:600}}>{fmtShort(w)}</div>
                       ))}
@@ -369,7 +369,7 @@ function App() {
                     ))}
                   </div>
                   <div style={{display:"flex", gap:10, marginTop:8, alignItems:"center", flexWrap:"wrap"}}>
-                    <span style={{fontSize:10, color:"#4B5563"}}>Attività parallele:</span>
+                    <span style={{fontSize:10, color:"#4B5563"}}>Parallel tasks:</span>
                     {[0,1,2,3,4].map(n => (
                       <div key={n} style={{display:"flex", alignItems:"center", gap:4}}>
                         <div style={{width:18, height:18, borderRadius:3, background:heatBg(n), border:"1px solid #1F2937"}} />

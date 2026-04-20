@@ -1,0 +1,113 @@
+{
+  "t": [
+    {
+      "id": "1700001001000",
+      "taskName": "Backend integration",
+      "projectName": "ERP Migration",
+      "resourceId": "1700000001000",
+      "startDate": "2026-04-20",
+      "endDate": "2026-05-08"
+    },
+    {
+      "id": "1700001002000",
+      "taskName": "Auth module",
+      "projectName": "API Gateway",
+      "resourceId": "1700000001000",
+      "startDate": "2026-04-27",
+      "endDate": "2026-05-22"
+    },
+    {
+      "id": "1700001003000",
+      "taskName": "Data modeling",
+      "projectName": "Data Warehouse",
+      "resourceId": "1700000001000",
+      "startDate": "2026-05-04",
+      "endDate": "2026-05-15"
+    },
+    {
+      "id": "1700001004000",
+      "taskName": "UI overhaul",
+      "projectName": "Customer Portal",
+      "resourceId": "1700000002000",
+      "startDate": "2026-04-20",
+      "endDate": "2026-05-01"
+    },
+    {
+      "id": "1700001005000",
+      "taskName": "Frontend integration",
+      "projectName": "ERP Migration",
+      "resourceId": "1700000002000",
+      "startDate": "2026-04-27",
+      "endDate": "2026-05-22"
+    },
+    {
+      "id": "1700001006000",
+      "taskName": "Component library",
+      "projectName": "Mobile App Redesign",
+      "resourceId": "1700000002000",
+      "startDate": "2026-05-11",
+      "endDate": "2026-05-29"
+    },
+    {
+      "id": "1700001007000",
+      "taskName": "Backend API",
+      "projectName": "Customer Portal",
+      "resourceId": "1700000003000",
+      "startDate": "2026-04-20",
+      "endDate": "2026-05-08"
+    },
+    {
+      "id": "1700001008000",
+      "taskName": "ETL pipelines",
+      "projectName": "Data Warehouse",
+      "resourceId": "1700000003000",
+      "startDate": "2026-05-11",
+      "endDate": "2026-06-05"
+    },
+    {
+      "id": "1700001009000",
+      "taskName": "UX research & wireframes",
+      "projectName": "Mobile App Redesign",
+      "resourceId": "1700000004000",
+      "startDate": "2026-04-20",
+      "endDate": "2026-04-30"
+    },
+    {
+      "id": "1700001010000",
+      "taskName": "API documentation",
+      "projectName": "API Gateway",
+      "resourceId": "1700000004000",
+      "startDate": "2026-05-04",
+      "endDate": "2026-05-15"
+    },
+    {
+      "id": "1700001011000",
+      "taskName": "QA & regression testing",
+      "projectName": "Customer Portal",
+      "resourceId": "1700000004000",
+      "startDate": "2026-05-18",
+      "endDate": "2026-06-05"
+    },
+    {
+      "id": "1700001012000",
+      "taskName": "UAT coordination",
+      "projectName": "ERP Migration",
+      "resourceId": "1700000004000",
+      "startDate": "2026-05-25",
+      "endDate": "2026-06-12"
+    }
+  ],
+  "r": [
+    { "id": "1700000001000", "name": "John" },
+    { "id": "1700000002000", "name": "Sarah" },
+    { "id": "1700000003000", "name": "Marco" },
+    { "id": "1700000004000", "name": "Elena" }
+  ],
+  "c": {
+    "ERP Migration":      "#E84855",
+    "API Gateway":        "#3A86FF",
+    "Data Warehouse":     "#06D6A0",
+    "Customer Portal":    "#FFB703",
+    "Mobile App Redesign":"#8338EC"
+  }
+}
