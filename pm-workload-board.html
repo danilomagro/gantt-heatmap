@@ -46,7 +46,7 @@ function App() {
   const [resources, setResources] = React.useState([]);
   const [pColors, setPColors] = React.useState({});
   const [view, setView] = React.useState("both");
-  const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceId:"", startDate:"", endDate:"" });
+  const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceId:"", startDate:"", endDate:"", notes:"" });
   const [newRes, setNewRes] = React.useState("");
   const [sideOpen, setSideOpen] = React.useState(true);
   const [filterResource, setFilterResource] = React.useState("");
@@ -116,17 +116,17 @@ function App() {
     setResources(r); setTasks(t); persist(t, r, pColors);
   };
   const submitForm = () => {
-    const { id, taskName, projectName, resourceId, startDate, endDate } = form;
+    const { id, taskName, projectName, resourceId, startDate, endDate, notes } = form;
     if (!taskName||!projectName||!resourceId||!startDate||!endDate) return;
     const c = assignColor(projectName, pColors);
     const t = id
-      ? tasks.map(x => x.id===id ? {...x,taskName,projectName,resourceId,startDate,endDate} : x)
-      : [...tasks, { id:Date.now().toString(), taskName, projectName, resourceId, startDate, endDate }];
+      ? tasks.map(x => x.id===id ? {...x,taskName,projectName,resourceId,startDate,endDate,notes} : x)
+      : [...tasks, { id:Date.now().toString(), taskName, projectName, resourceId, startDate, endDate, notes }];
     setTasks(t); setPColors(c); persist(t, resources, c);
-    setForm({ id:null, taskName:"", projectName:"", resourceId:"", startDate:"", endDate:"" });
+    setForm({ id:null, taskName:"", projectName:"", resourceId:"", startDate:"", endDate:"", notes:"" });
   };
   const delTask = id => { const t = tasks.filter(x => x.id!==id); setTasks(t); persist(t,resources,pColors); };
-  const editTask = task => setForm({...task});
+  const editTask = task => setForm({...task, notes: task.notes || ""});
 
   const exportJSON = () => {
     const blob = new Blob([JSON.stringify({t:tasks,r:resources,c:pColors},null,2)], {type:"application/json"});
@@ -242,15 +242,16 @@ function App() {
                 <option value="">Resource…</option>
                 {resources.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
-              <div style={{display:"flex", gap:4, marginBottom:8}}>
+              <div style={{display:"flex", gap:4, marginBottom:5}}>
                 <input type="date" lang="en-GB" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
                 <input type="date" lang="en-GB" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
               </div>
+              <textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Notes (optional)" rows={2} style={{...S.input, marginBottom:8, resize:"vertical", fontFamily:"inherit", lineHeight:1.4}} />
               <button onClick={submitForm} style={{width:"100%", padding:"8px", borderRadius:6, border:"none", background:"#2563EB", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>
                 {form.id?"Save changes":"Add"}
               </button>
               {form.id && (
-                <button onClick={()=>setForm({id:null,taskName:"",projectName:"",resourceId:"",startDate:"",endDate:""})}
+                <button onClick={()=>setForm({id:null,taskName:"",projectName:"",resourceId:"",startDate:"",endDate:"",notes:""})}
                   style={{width:"100%", padding:"6px", borderRadius:6, border:"1px solid #1F2937", background:"transparent", color:"#6B7280", fontSize:12, cursor:"pointer", marginTop:4}}>
                   Cancel
                 </button>
@@ -336,7 +337,7 @@ function App() {
                                   )}
                                   <div
                                     onClick={()=>editTask(task)}
-                                    title={`${task.taskName}\n${task.projectName}\n${task.startDate} → ${task.endDate}`}
+                                    title={`${task.taskName}\n${task.projectName}\n${task.startDate} → ${task.endDate}${task.notes ? "\n\n" + task.notes : ""}`}
                                     style={{
                                       position:"absolute", ...barStyle(task),
                                       height:22, borderRadius:5,

@@ -6,7 +6,8 @@
       "projectName": "ERP Migration",
       "resourceId": "1700000001000",
       "startDate": "2026-04-20",
-      "endDate": "2026-05-08"
+      "endDate": "2026-05-08",
+      "notes": "Blocked by missing DB credentials from client IT — follow up Thursday"
     },
     {
       "id": "1700001002000",
@@ -22,7 +23,8 @@
       "projectName": "Data Warehouse",
       "resourceId": "1700000001000",
       "startDate": "2026-05-04",
-      "endDate": "2026-05-15"
+      "endDate": "2026-05-15",
+      "notes": "Schema review with data team scheduled for 06 May"
     },
     {
       "id": "1700001004000",
@@ -38,7 +40,8 @@
       "projectName": "ERP Migration",
       "resourceId": "1700000002000",
       "startDate": "2026-04-27",
-      "endDate": "2026-05-22"
+      "endDate": "2026-05-22",
+      "notes": "Coordinate with John — depends on backend endpoints being ready by 09 May"
     },
     {
       "id": "1700001006000",
@@ -62,7 +65,8 @@
       "projectName": "Data Warehouse",
       "resourceId": "1700000003000",
       "startDate": "2026-05-11",
-      "endDate": "2026-06-05"
+      "endDate": "2026-06-05",
+      "notes": "Waiting for data modeling sign-off before starting. Source system access TBC."
     },
     {
       "id": "1700001009000",
@@ -86,7 +90,8 @@
       "projectName": "Customer Portal",
       "resourceId": "1700000004000",
       "startDate": "2026-05-18",
-      "endDate": "2026-06-05"
+      "endDate": "2026-06-05",
+      "notes": "Test plan ready. Needs staging environment — chasing Marco for deployment."
     },
     {
       "id": "1700001012000",
@@ -94,7 +99,8 @@
       "projectName": "ERP Migration",
       "resourceId": "1700000004000",
       "startDate": "2026-05-25",
-      "endDate": "2026-06-12"
+      "endDate": "2026-06-12",
+      "notes": "Client has 3 key users confirmed for UAT. Go-live target 16 June — no slip allowed."
     }
   ],
   "r": [
