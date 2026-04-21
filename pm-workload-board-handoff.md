@@ -98,6 +98,7 @@ Listed in suggested priority order:
 6. **Milestone** — vertical marker with label (e.g. "Project X go-live") overlaid on the Gantt
 7. **Drag & drop dates** — drag bars to shift dates (high complexity)
 8. **Completion percentage** — partial fill bar + % field in the task card
+9. **Light theme** — light colour scheme alternative to the current dark theme, with a toggle button (top-right) and preference saved in localStorage
 
 ---
 
