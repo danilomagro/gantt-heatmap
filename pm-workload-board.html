@@ -57,6 +57,7 @@ function App() {
   const [newRes, setNewRes] = React.useState("");
   const [sideOpen, setSideOpen] = React.useState(true);
   const [filterResource, setFilterResource] = React.useState("");
+  const [filterProject, setFilterProject] = React.useState("");
 
   React.useEffect(() => {
     const r = storage.get(STORAGE_KEY);
@@ -162,6 +163,12 @@ function App() {
     }
   }, [resources]);
 
+  React.useEffect(() => {
+    if (filterProject && !tasks.some(t => t.projectName === filterProject)) {
+      setFilterProject("");
+    }
+  }, [tasks]);
+
   const projects = [...new Set(tasks.map(t => t.projectName))];
 
   const S = {
@@ -226,6 +233,20 @@ function App() {
                 >
                   <option value="">All resources</option>
                   {resources.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {projects.length > 0 && (
+              <div>
+                <div style={S.label}>FILTER BY PROJECT</div>
+                <select
+                  value={filterProject}
+                  onChange={e => setFilterProject(e.target.value)}
+                  style={{...S.input, color: filterProject ? "#E2E8F0" : "#4B5563"}}
+                >
+                  <option value="">All projects</option>
+                  {projects.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
             )}
@@ -328,7 +349,7 @@ function App() {
                     </div>
 
                     {resources.filter(res => !filterResource || res.id === filterResource).map(res => {
-                      const resTasks = tasks.filter(t=>t.resourceIds.includes(res.id));
+                      const resTasks = tasks.filter(t=>t.resourceIds.includes(res.id) && (!filterProject || t.projectName===filterProject));
                       if (!resTasks.length) return null;
                       return (
                         <div key={res.id}>
@@ -401,10 +422,11 @@ function App() {
                       <div key={res.id} style={{display:"flex", borderTop:"1px solid #1F2937"}}>
                         <div style={{width:148, flexShrink:0, padding:"10px", fontSize:12, fontWeight:600, color:"#D1D5DB", borderRight:"1px solid #1F2937", display:"flex", alignItems:"center"}}>{res.name}</div>
                         {cols.map((cellTasks,i) => {
-                          const n = cellTasks.length;
+                          const visibleCellTasks = filterProject ? cellTasks.filter(t=>t.projectName===filterProject) : cellTasks;
+                          const n = visibleCellTasks.length;
                           return (
                             <div key={i}
-                              title={n>0?cellTasks.map(t=>`${t.taskName} (${t.projectName})`).join("\n"):""}
+                              title={n>0?visibleCellTasks.map(t=>`${t.taskName} (${t.projectName})`).join("\n"):""}
                               style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", background:heatBg(n), borderRight:i<weeks.length-1?"1px solid rgba(255,255,255,0.04)":"", minHeight:42, cursor:n>0?"pointer":"default"}}
                             >
                               {n>0 && <span style={{fontSize:15, fontWeight:800, color:heatFg(n)}}>{n}</span>}
