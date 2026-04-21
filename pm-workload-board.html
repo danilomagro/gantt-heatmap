@@ -59,6 +59,8 @@ function App() {
   const [sideOpen, setSideOpen] = React.useState(true);
   const [filterResource, setFilterResource] = React.useState("");
   const [filterProject, setFilterProject] = React.useState("");
+  const [minVisibleWeeks, setMinVisibleWeeks] = React.useState(8);
+  const mainRef = React.useRef(null);
 
   // Scroll sync refs
   const ganttScrollRef = React.useRef(null);
@@ -100,16 +102,16 @@ function App() {
     const ws = [];
     if (!tasks.length) {
       let cur = startOfMonday(new Date());
-      for (let i=0; i<8; i++) { ws.push(new Date(cur)); cur = addDays(cur,7); }
+      for (let i=0; i<minVisibleWeeks; i++) { ws.push(new Date(cur)); cur = addDays(cur,7); }
       return ws;
     }
     const dates = tasks.flatMap(t => [parseDate(t.startDate), parseDate(t.endDate)]);
     let cur = startOfMonday(new Date(Math.min(...dates)));
     const end = new Date(Math.max(...dates));
     while (cur <= end) { ws.push(new Date(cur)); cur = addDays(cur,7); }
-    while (ws.length < 8) ws.push(addDays(ws[ws.length-1],7));
+    while (ws.length < minVisibleWeeks) ws.push(addDays(ws[ws.length-1],7));
     return ws;
-  }, [tasks]);
+  }, [tasks, minVisibleWeeks]);
 
   const timelineStart = weeks[0];
   const timelineWidth = weeks.length * MIN_WEEK_W;
@@ -187,6 +189,18 @@ function App() {
     reader.readAsText(file);
     e.target.value = "";
   };
+
+  React.useLayoutEffect(() => {
+    if (!mainRef.current) return;
+    const update = () => {
+      const w = mainRef.current.clientWidth;
+      setMinVisibleWeeks(Math.max(8, Math.ceil((w - 148) / MIN_WEEK_W)));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(mainRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   React.useEffect(() => {
     if (filterResource && !resources.find(r => r.id === filterResource)) {
@@ -354,7 +368,7 @@ function App() {
           </aside>
         )}
 
-        <main style={S.main}>
+        <main ref={mainRef} style={S.main}>
           {tasks.length === 0 ? (
             <div style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"80vh", color:"#374151", gap:8}}>
               <div style={{fontSize:48}}>📊</div>
