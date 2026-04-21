@@ -4,7 +4,7 @@
       "id": "1700001001000",
       "taskName": "Backend integration",
       "projectName": "ERP Migration",
-      "resourceId": "1700000001000",
+      "resourceIds": ["1700000001000", "1700000003000"],
       "startDate": "2026-04-20",
       "endDate": "2026-05-08",
       "notes": "Blocked by missing DB credentials from client IT — follow up Thursday"
@@ -13,7 +13,7 @@
       "id": "1700001002000",
       "taskName": "Auth module",
       "projectName": "API Gateway",
-      "resourceId": "1700000001000",
+      "resourceIds": ["1700000001000"],
       "startDate": "2026-04-27",
       "endDate": "2026-05-22"
     },
@@ -21,7 +21,7 @@
       "id": "1700001003000",
       "taskName": "Data modeling",
       "projectName": "Data Warehouse",
-      "resourceId": "1700000001000",
+      "resourceIds": ["1700000001000"],
       "startDate": "2026-05-04",
       "endDate": "2026-05-15",
       "notes": "Schema review with data team scheduled for 06 May"
@@ -30,7 +30,7 @@
       "id": "1700001004000",
       "taskName": "UI overhaul",
       "projectName": "Customer Portal",
-      "resourceId": "1700000002000",
+      "resourceIds": ["1700000002000"],
       "startDate": "2026-04-20",
       "endDate": "2026-05-01"
     },
@@ -38,7 +38,7 @@
       "id": "1700001005000",
       "taskName": "Frontend integration",
       "projectName": "ERP Migration",
-      "resourceId": "1700000002000",
+      "resourceIds": ["1700000002000"],
       "startDate": "2026-04-27",
       "endDate": "2026-05-22",
       "notes": "Coordinate with John — depends on backend endpoints being ready by 09 May"
@@ -47,7 +47,7 @@
       "id": "1700001006000",
       "taskName": "Component library",
       "projectName": "Mobile App Redesign",
-      "resourceId": "1700000002000",
+      "resourceIds": ["1700000002000", "1700000004000"],
       "startDate": "2026-05-11",
       "endDate": "2026-05-29"
     },
@@ -55,7 +55,7 @@
       "id": "1700001007000",
       "taskName": "Backend API",
       "projectName": "Customer Portal",
-      "resourceId": "1700000003000",
+      "resourceIds": ["1700000003000"],
       "startDate": "2026-04-20",
       "endDate": "2026-05-08"
     },
@@ -63,7 +63,7 @@
       "id": "1700001008000",
       "taskName": "ETL pipelines",
       "projectName": "Data Warehouse",
-      "resourceId": "1700000003000",
+      "resourceIds": ["1700000003000"],
       "startDate": "2026-05-11",
       "endDate": "2026-06-05",
       "notes": "Waiting for data modeling sign-off before starting. Source system access TBC."
@@ -72,7 +72,7 @@
       "id": "1700001009000",
       "taskName": "UX research & wireframes",
       "projectName": "Mobile App Redesign",
-      "resourceId": "1700000004000",
+      "resourceIds": ["1700000004000"],
       "startDate": "2026-04-20",
       "endDate": "2026-04-30"
     },
@@ -80,7 +80,7 @@
       "id": "1700001010000",
       "taskName": "API documentation",
       "projectName": "API Gateway",
-      "resourceId": "1700000004000",
+      "resourceIds": ["1700000004000"],
       "startDate": "2026-05-04",
       "endDate": "2026-05-15"
     },
@@ -88,7 +88,7 @@
       "id": "1700001011000",
       "taskName": "QA & regression testing",
       "projectName": "Customer Portal",
-      "resourceId": "1700000004000",
+      "resourceIds": ["1700000004000", "1700000002000"],
       "startDate": "2026-05-18",
       "endDate": "2026-06-05",
       "notes": "Test plan ready. Needs staging environment — chasing Marco for deployment."
@@ -97,7 +97,7 @@
       "id": "1700001012000",
       "taskName": "UAT coordination",
       "projectName": "ERP Migration",
-      "resourceId": "1700000004000",
+      "resourceIds": ["1700000004000"],
       "startDate": "2026-05-25",
       "endDate": "2026-06-12",
       "notes": "Client has 3 key users confirmed for UAT. Go-live target 16 June — no slip allowed."

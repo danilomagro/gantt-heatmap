@@ -41,19 +41,26 @@ const storage = {
   set: (key, val) => { try { localStorage.setItem(key, val); } catch {} },
 };
 
+function normalizeTasks(rawTasks) {
+  return (rawTasks || []).map(({ resourceId, ...t }) => ({
+    ...t,
+    resourceIds: t.resourceIds || (resourceId ? [resourceId] : []),
+  }));
+}
+
 function App() {
   const [tasks, setTasks] = React.useState([]);
   const [resources, setResources] = React.useState([]);
   const [pColors, setPColors] = React.useState({});
   const [view, setView] = React.useState("both");
-  const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceId:"", startDate:"", endDate:"", notes:"" });
+  const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"" });
   const [newRes, setNewRes] = React.useState("");
   const [sideOpen, setSideOpen] = React.useState(true);
   const [filterResource, setFilterResource] = React.useState("");
 
   React.useEffect(() => {
     const r = storage.get(STORAGE_KEY);
-    if (r) { try { const d = JSON.parse(r.value); setTasks(d.t||[]); setResources(d.r||[]); setPColors(d.c||{}); } catch {} }
+    if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); } catch {} }
   }, []);
 
   const persist = (t, r, c) => storage.set(STORAGE_KEY, JSON.stringify({ t, r, c }));
@@ -94,7 +101,7 @@ function App() {
     res,
     cols: weeks.map(ws => {
       const we = addDays(ws,6);
-      return tasks.filter(t => t.resourceId===res.id && parseDate(t.startDate)<=we && parseDate(t.endDate)>=ws);
+      return tasks.filter(t => t.resourceIds.includes(res.id) && parseDate(t.startDate)<=we && parseDate(t.endDate)>=ws);
     })
   })), [resources, tasks, weeks]);
 
@@ -112,21 +119,23 @@ function App() {
   };
   const delResource = id => {
     const r = resources.filter(x => x.id!==id);
-    const t = tasks.filter(x => x.resourceId!==id);
+    const t = tasks
+      .map(x => ({ ...x, resourceIds: x.resourceIds.filter(rid => rid!==id) }))
+      .filter(x => x.resourceIds.length > 0);
     setResources(r); setTasks(t); persist(t, r, pColors);
   };
   const submitForm = () => {
-    const { id, taskName, projectName, resourceId, startDate, endDate, notes } = form;
-    if (!taskName||!projectName||!resourceId||!startDate||!endDate) return;
+    const { id, taskName, projectName, resourceIds, startDate, endDate, notes } = form;
+    if (!taskName||!projectName||!resourceIds.length||!startDate||!endDate) return;
     const c = assignColor(projectName, pColors);
     const t = id
-      ? tasks.map(x => x.id===id ? {...x,taskName,projectName,resourceId,startDate,endDate,notes} : x)
-      : [...tasks, { id:Date.now().toString(), taskName, projectName, resourceId, startDate, endDate, notes }];
+      ? tasks.map(x => x.id===id ? {...x,taskName,projectName,resourceIds,startDate,endDate,notes} : x)
+      : [...tasks, { id:Date.now().toString(), taskName, projectName, resourceIds, startDate, endDate, notes }];
     setTasks(t); setPColors(c); persist(t, resources, c);
-    setForm({ id:null, taskName:"", projectName:"", resourceId:"", startDate:"", endDate:"", notes:"" });
+    setForm({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"" });
   };
   const delTask = id => { const t = tasks.filter(x => x.id!==id); setTasks(t); persist(t,resources,pColors); };
-  const editTask = task => setForm({...task, notes: task.notes || ""});
+  const editTask = task => setForm({...task, notes: task.notes || "", resourceIds: task.resourceIds || []});
 
   const exportJSON = () => {
     const blob = new Blob([JSON.stringify({t:tasks,r:resources,c:pColors},null,2)], {type:"application/json"});
@@ -139,7 +148,7 @@ function App() {
     reader.onload = ev => {
       try {
         const d = JSON.parse(ev.target.result);
-        setTasks(d.t||[]); setResources(d.r||[]); setPColors(d.c||{});
+        setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{});
         persist(d.t||[], d.r||[], d.c||{});
       } catch { alert("Invalid file"); }
     };
@@ -238,10 +247,22 @@ function App() {
               <input value={form.taskName} onChange={e=>setForm({...form,taskName:e.target.value})} placeholder="Task name" style={{...S.input, marginBottom:5}} />
               <input value={form.projectName} onChange={e=>setForm({...form,projectName:e.target.value})} placeholder="Project name" style={{...S.input, marginBottom:5}} list="projects-list" />
               <datalist id="projects-list">{projects.map(p=><option key={p} value={p}/>)}</datalist>
-              <select value={form.resourceId} onChange={e=>setForm({...form,resourceId:e.target.value})} style={{...S.input, marginBottom:5, color:form.resourceId?"#E2E8F0":"#4B5563"}}>
-                <option value="">Resource…</option>
-                {resources.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
+              <div style={{border:"1px solid #1F2937", borderRadius:6, background:"#0A0F1E", marginBottom:5, padding:"5px 9px", maxHeight:96, overflowY:"auto"}}>
+                {resources.length === 0
+                  ? <span style={{fontSize:11, color:"#4B5563"}}>Add resources first</span>
+                  : resources.map(r => (
+                      <label key={r.id} style={{display:"flex", alignItems:"center", gap:7, padding:"3px 0", cursor:"pointer"}}>
+                        <input type="checkbox" checked={form.resourceIds.includes(r.id)}
+                          onChange={e => {
+                            const ids = e.target.checked ? [...form.resourceIds, r.id] : form.resourceIds.filter(x=>x!==r.id);
+                            setForm({...form, resourceIds: ids});
+                          }}
+                          style={{accentColor:"#2563EB", cursor:"pointer"}} />
+                        <span style={{fontSize:12, color:"#E2E8F0"}}>{r.name}</span>
+                      </label>
+                    ))
+                }
+              </div>
               <div style={{display:"flex", gap:4, marginBottom:5}}>
                 <input type="date" lang="en-GB" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
                 <input type="date" lang="en-GB" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
@@ -251,7 +272,7 @@ function App() {
                 {form.id?"Save changes":"Add"}
               </button>
               {form.id && (
-                <button onClick={()=>setForm({id:null,taskName:"",projectName:"",resourceId:"",startDate:"",endDate:"",notes:""})}
+                <button onClick={()=>setForm({id:null,taskName:"",projectName:"",resourceIds:[],startDate:"",endDate:"",notes:""})}
                   style={{width:"100%", padding:"6px", borderRadius:6, border:"1px solid #1F2937", background:"transparent", color:"#6B7280", fontSize:12, cursor:"pointer", marginTop:4}}>
                   Cancel
                 </button>
@@ -262,13 +283,13 @@ function App() {
               <div style={{flex:1, overflowY:"auto"}}>
                 <div style={S.label}>TASKS ({tasks.length})</div>
                 {tasks.map(t => {
-                  const res = resources.find(r=>r.id===t.resourceId);
+                  const resNames = (t.resourceIds||[]).map(id=>resources.find(r=>r.id===id)?.name).filter(Boolean).join(", ");
                   const col = pColors[t.projectName]||"#3B82F6";
                   return (
                     <div key={t.id} style={{...S.card, borderLeft:`3px solid ${col}`, marginBottom:5}}>
                       <div style={{fontSize:12, fontWeight:600, color:"#E2E8F0", marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{t.taskName}</div>
                       <div style={{fontSize:10, color:"#6B7280"}}>{t.projectName}</div>
-                      <div style={{fontSize:10, color:"#4B5563"}}>{res?.name} · {t.startDate} → {t.endDate}</div>
+                      <div style={{fontSize:10, color:"#4B5563"}}>{resNames} · {t.startDate} → {t.endDate}</div>
                       <div style={{display:"flex", gap:5, marginTop:6}}>
                         <button onClick={()=>editTask(t)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"1px solid #1F2937", background:"transparent", color:"#9CA3AF", fontSize:10, cursor:"pointer"}}>✏ Edit</button>
                         <button onClick={()=>delTask(t.id)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"none", background:"rgba(127,29,29,0.5)", color:"#FCA5A5", fontSize:10, cursor:"pointer"}}>✕ Del</button>
@@ -307,7 +328,7 @@ function App() {
                     </div>
 
                     {resources.filter(res => !filterResource || res.id === filterResource).map(res => {
-                      const resTasks = tasks.filter(t=>t.resourceId===res.id);
+                      const resTasks = tasks.filter(t=>t.resourceIds.includes(res.id));
                       if (!resTasks.length) return null;
                       return (
                         <div key={res.id}>
@@ -376,7 +397,7 @@ function App() {
                         <div key={i} style={{flex:1, padding:"7px 3px", fontSize:9, color:"#4B5563", textAlign:"center", borderRight:i<weeks.length-1?"1px solid #1F2937":"", fontWeight:600}}>{fmtShort(w)}</div>
                       ))}
                     </div>
-                    {heatmap.filter(h=>tasks.some(t=>t.resourceId===h.res.id)).filter(h => !filterResource || h.res.id === filterResource).map(({res,cols}) => (
+                    {heatmap.filter(h=>tasks.some(t=>t.resourceIds.includes(h.res.id))).filter(h => !filterResource || h.res.id === filterResource).map(({res,cols}) => (
                       <div key={res.id} style={{display:"flex", borderTop:"1px solid #1F2937"}}>
                         <div style={{width:148, flexShrink:0, padding:"10px", fontSize:12, fontWeight:600, color:"#D1D5DB", borderRight:"1px solid #1F2937", display:"flex", alignItems:"center"}}>{res.name}</div>
                         {cols.map((cellTasks,i) => {
