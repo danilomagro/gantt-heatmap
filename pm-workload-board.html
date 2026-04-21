@@ -422,14 +422,30 @@ function App() {
                       <div key={res.id} style={{display:"flex", borderTop:"1px solid #1F2937"}}>
                         <div style={{width:148, flexShrink:0, padding:"10px", fontSize:12, fontWeight:600, color:"#D1D5DB", borderRight:"1px solid #1F2937", display:"flex", alignItems:"center"}}>{res.name}</div>
                         {cols.map((cellTasks,i) => {
-                          const visibleCellTasks = filterProject ? cellTasks.filter(t=>t.projectName===filterProject) : cellTasks;
-                          const n = visibleCellTasks.length;
+                          const totalN = cellTasks.length;
+                          const projectTasks = filterProject ? cellTasks.filter(t=>t.projectName===filterProject) : cellTasks;
+                          const projectN = projectTasks.length;
+                          const tooltipText = () => {
+                            if (totalN === 0) return "";
+                            if (filterProject) {
+                              const header = `${filterProject}: ${projectN} of ${totalN} task(s) this week`;
+                              const projLines = projectTasks.length ? "\n" + projectTasks.map(t=>`• ${t.taskName}`).join("\n") : "";
+                              const others = cellTasks.filter(t=>t.projectName!==filterProject);
+                              const otherLines = others.length ? "\nOther projects:\n" + others.map(t=>`• ${t.taskName} (${t.projectName})`).join("\n") : "";
+                              return header + projLines + otherLines;
+                            }
+                            return cellTasks.map(t=>`${t.taskName} (${t.projectName})`).join("\n");
+                          };
                           return (
                             <div key={i}
-                              title={n>0?visibleCellTasks.map(t=>`${t.taskName} (${t.projectName})`).join("\n"):""}
-                              style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", background:heatBg(n), borderRight:i<weeks.length-1?"1px solid rgba(255,255,255,0.04)":"", minHeight:42, cursor:n>0?"pointer":"default"}}
+                              title={tooltipText()}
+                              style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", background:heatBg(totalN), borderRight:i<weeks.length-1?"1px solid rgba(255,255,255,0.04)":"", minHeight:42, cursor:totalN>0?"pointer":"default"}}
                             >
-                              {n>0 && <span style={{fontSize:15, fontWeight:800, color:heatFg(n)}}>{n}</span>}
+                              {totalN>0 && (
+                                <span style={{fontSize:filterProject?11:15, fontWeight:800, color:heatFg(totalN), letterSpacing:filterProject?"-0.5px":"normal"}}>
+                                  {filterProject ? `${projectN}/${totalN}` : totalN}
+                                </span>
+                              )}
                             </div>
                           );
                         })}
