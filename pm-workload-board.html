@@ -418,7 +418,7 @@ function App() {
                               {resTasks.map(task => {
                                 const col = pColors[task.projectName]||"#3B82F6";
                                 return (
-                                  <div key={task.id} style={{display:"flex", borderTop:"1px solid rgba(255,255,255,0.03)", minHeight:28}}>
+                                  <div key={task.id} style={{display:"flex", borderTop:"1px solid rgba(255,255,255,0.03)", minHeight:40}}>
                                     <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:10, color:"#6B7280", borderRight:"1px solid #1F2937", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"#0A0F1E", zIndex:3}}>
                                       <div style={{width:7, height:7, borderRadius:2, background:col, flexShrink:0}} />
                                       <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{task.taskName}</span>
@@ -435,7 +435,7 @@ function App() {
                                         title={(() => { const names = (task.resourceIds||[]).map(id=>resources.find(r=>r.id===id)?.name).filter(Boolean).join(", "); return `${task.taskName}\n${task.projectName}\n${task.startDate} → ${task.endDate}${names ? "\nResources: "+names : ""}${task.notes ? "\n\n"+task.notes : ""}`; })()}
                                         style={{
                                           position:"absolute", ...barStyle(task),
-                                          height:18, borderRadius:5,
+                                          height:24, borderRadius:5,
                                           background:col, opacity:0.92,
                                           display:"flex", alignItems:"center", padding:"0 8px",
                                           fontSize:10, color:"#fff", fontWeight:600,
@@ -507,7 +507,7 @@ function App() {
                               return (
                                 <div key={i}
                                   title={tooltipText()}
-                                  style={{width:MIN_WEEK_W, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background:heatBg(totalN), borderRight:i<weeks.length-1?"1px solid rgba(255,255,255,0.04)":"", minHeight:42, cursor:totalN>0?"pointer":"default"}}
+                                  style={{width:MIN_WEEK_W, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background:heatBg(totalN), borderRight:i<weeks.length-1?"1px solid rgba(255,255,255,0.04)":"", minHeight:34, cursor:totalN>0?"pointer":"default"}}
                                 >
                                   {totalN>0 && (
                                     <span style={{fontSize:11, fontWeight:800, color:heatFg(totalN), letterSpacing:"-0.5px"}}>

@@ -19,14 +19,6 @@
       "notes": "Coordinate with John — depends on backend endpoints being ready by 09 May"
     },
     {
-      "id": "1700001006000",
-      "taskName": "Component library",
-      "projectName": "Mobile App Redesign",
-      "resourceIds": ["1700000002000", "1700000004000"],
-      "startDate": "2026-05-11",
-      "endDate": "2026-06-19"
-    },
-    {
       "id": "1700001008000",
       "taskName": "ETL pipelines",
       "projectName": "Data Warehouse",
@@ -39,7 +31,7 @@
       "id": "1700001011000",
       "taskName": "QA & regression testing",
       "projectName": "Customer Portal",
-      "resourceIds": ["1700000004000", "1700000002000"],
+      "resourceIds": ["1700000002000"],
       "startDate": "2026-05-18",
       "endDate": "2026-06-19",
       "notes": "Test plan ready. Needs staging environment — chasing Marco for deployment."
@@ -57,10 +49,10 @@
       "id": "1700001014000",
       "taskName": "Mobile screen implementation",
       "projectName": "Mobile App Redesign",
-      "resourceIds": ["1700000002000", "1700000004000"],
-      "startDate": "2026-06-29",
+      "resourceIds": ["1700000002000"],
+      "startDate": "2026-06-08",
       "endDate": "2026-08-07",
-      "notes": "Sarah owns React Native build, Elena handles interaction polish and handoff QA."
+      "notes": "React Native build. Polish pass and handoff QA to follow before release."
     },
     {
       "id": "1700001015000",
@@ -70,22 +62,12 @@
       "startDate": "2026-07-06",
       "endDate": "2026-08-07",
       "notes": "BI layer on top of ETL output. Stakeholder review scheduled mid-July."
-    },
-    {
-      "id": "1700001017000",
-      "taskName": "Analytics integration",
-      "projectName": "Customer Portal",
-      "resourceIds": ["1700000001000", "1700000004000"],
-      "startDate": "2026-07-27",
-      "endDate": "2026-08-21",
-      "notes": "Segment + Mixpanel events. Elena owns dashboard design, John owns tracking layer."
     }
   ],
   "r": [
     { "id": "1700000001000", "name": "John" },
     { "id": "1700000002000", "name": "Sarah" },
-    { "id": "1700000003000", "name": "Marco" },
-    { "id": "1700000004000", "name": "Elena" }
+    { "id": "1700000003000", "name": "Marco" }
   ],
   "c": {
     "ERP Migration":      "#E84855",
