@@ -15,7 +15,7 @@
       "projectName": "API Gateway",
       "resourceIds": ["1700000001000"],
       "startDate": "2026-04-27",
-      "endDate": "2026-05-22"
+      "endDate": "2026-06-05"
     },
     {
       "id": "1700001003000",
@@ -40,7 +40,7 @@
       "projectName": "ERP Migration",
       "resourceIds": ["1700000002000"],
       "startDate": "2026-04-27",
-      "endDate": "2026-05-22",
+      "endDate": "2026-06-12",
       "notes": "Coordinate with John — depends on backend endpoints being ready by 09 May"
     },
     {
@@ -49,7 +49,7 @@
       "projectName": "Mobile App Redesign",
       "resourceIds": ["1700000002000", "1700000004000"],
       "startDate": "2026-05-11",
-      "endDate": "2026-05-29"
+      "endDate": "2026-06-19"
     },
     {
       "id": "1700001007000",
@@ -65,7 +65,7 @@
       "projectName": "Data Warehouse",
       "resourceIds": ["1700000003000"],
       "startDate": "2026-05-11",
-      "endDate": "2026-06-05",
+      "endDate": "2026-06-26",
       "notes": "Waiting for data modeling sign-off before starting. Source system access TBC."
     },
     {
@@ -90,7 +90,7 @@
       "projectName": "Customer Portal",
       "resourceIds": ["1700000004000", "1700000002000"],
       "startDate": "2026-05-18",
-      "endDate": "2026-06-05",
+      "endDate": "2026-06-19",
       "notes": "Test plan ready. Needs staging environment — chasing Marco for deployment."
     },
     {
@@ -99,8 +99,53 @@
       "projectName": "ERP Migration",
       "resourceIds": ["1700000004000"],
       "startDate": "2026-05-25",
-      "endDate": "2026-06-12",
-      "notes": "Client has 3 key users confirmed for UAT. Go-live target 16 June — no slip allowed."
+      "endDate": "2026-06-26",
+      "notes": "Client has 3 key users confirmed for UAT. Go-live target 30 June — no slip allowed."
+    },
+    {
+      "id": "1700001013000",
+      "taskName": "Performance optimisation",
+      "projectName": "API Gateway",
+      "resourceIds": ["1700000001000"],
+      "startDate": "2026-06-15",
+      "endDate": "2026-07-10",
+      "notes": "Target p99 latency < 80ms. Profile with k6 first, then tune connection pooling."
+    },
+    {
+      "id": "1700001014000",
+      "taskName": "Mobile screen implementation",
+      "projectName": "Mobile App Redesign",
+      "resourceIds": ["1700000002000", "1700000004000"],
+      "startDate": "2026-06-29",
+      "endDate": "2026-08-07",
+      "notes": "Sarah owns React Native build, Elena handles interaction polish and handoff QA."
+    },
+    {
+      "id": "1700001015000",
+      "taskName": "Dashboards & reporting",
+      "projectName": "Data Warehouse",
+      "resourceIds": ["1700000003000", "1700000001000"],
+      "startDate": "2026-07-06",
+      "endDate": "2026-08-07",
+      "notes": "BI layer on top of ETL output. Stakeholder review scheduled mid-July."
+    },
+    {
+      "id": "1700001016000",
+      "taskName": "Post-go-live support",
+      "projectName": "ERP Migration",
+      "resourceIds": ["1700000003000"],
+      "startDate": "2026-07-13",
+      "endDate": "2026-08-07",
+      "notes": "Monitor production system after go-live. Hotfix SLA: 4h critical, 24h major."
+    },
+    {
+      "id": "1700001017000",
+      "taskName": "Analytics integration",
+      "projectName": "Customer Portal",
+      "resourceIds": ["1700000001000", "1700000004000"],
+      "startDate": "2026-07-27",
+      "endDate": "2026-08-21",
+      "notes": "Segment + Mixpanel events. Elena owns dashboard design, John owns tracking layer."
     }
   ],
   "r": [
