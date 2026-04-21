@@ -1,111 +1,111 @@
-# PM Workload Board — Prompt di Handoff per Claude Aziendale
+# PM Workload Board — Handoff Prompt for Claude
 
-## Contesto
+## Context
 
-Questo file è un prompt da dare in pasto a Claude (o altro AI) per continuare lo sviluppo
-del tool `pm-workload-board.html` allegato.
-
----
-
-## Cosa è questo tool
-
-Un'applicazione web **standalone** (singolo file HTML, niente server, niente installazioni)
-per visualizzare il carico di lavoro di un team di sviluppo su più progetti in parallelo.
-
-**Problema che risolve:** un PM gestisce 7-8 progetti in manutenzione + implementazioni
-massicce (durata 1-2+ settimane). Quando il management chiede perché i developer sono lenti,
-serve un artefatto visivo **oggettivo e inattaccabile** che mostri le sovrapposizioni reali.
+This file is a prompt to give to Claude (or another AI) to continue development
+of the attached `pm-workload-board.html` tool.
 
 ---
 
-## Architettura tecnica
+## What this tool is
 
-- **Stack:** HTML + React 18 (via CDN) + Babel standalone (compila JSX nel browser)
-- **Storage:** `localStorage` del browser — i dati persistono tra sessioni
-- **Zero dipendenze locali:** funziona offline dopo il primo caricamento, doppio click per aprire
-- **Export/Import JSON:** per sincronizzare dati tra dispositivi diversi
+A **standalone** web application (single HTML file, no server, no installation)
+for visualizing the workload of a development team across multiple parallel projects.
+
+**Problem it solves:** a PM manages 7–8 maintenance projects + heavy implementations
+(lasting 1–2+ weeks). When management asks why developers are slow,
+you need an **objective and unassailable** visual artifact that shows real overlaps.
 
 ---
 
-## Struttura dati (localStorage, chiave `pm-gantt-v2`)
+## Technical architecture
+
+- **Stack:** HTML + React 18 (via CDN) + Babel standalone (compiles JSX in the browser)
+- **Storage:** browser `localStorage` — data persists across sessions
+- **Zero local dependencies:** works offline after the first load, double-click to open
+- **Export/Import JSON:** to sync data across different devices
+
+---
+
+## Data structure (localStorage, key `pm-gantt-v2`)
 
 ```json
 {
   "t": [
     {
       "id": "timestamp string",
-      "taskName": "Nome attività",
-      "projectName": "Nome progetto",
-      "resourceId": "id della risorsa",
+      "taskName": "Activity name",
+      "projectName": "Project name",
+      "resourceId": "resource id",
       "startDate": "YYYY-MM-DD",
       "endDate": "YYYY-MM-DD"
     }
   ],
   "r": [
-    { "id": "timestamp string", "name": "Nome risorsa" }
+    { "id": "timestamp string", "name": "Resource name" }
   ],
   "c": {
-    "Nome progetto": "#HEX colore assegnato automaticamente"
+    "Project name": "#HEX color assigned automatically"
   }
 }
 ```
 
 ---
 
-## Funzionalità attuali
+## Current features
 
-**Sidebar sinistra:**
-- Gestione risorse (persone): aggiungi / elimina
-- Legenda progetti con colori auto-assegnati
-- Form aggiunta/modifica attività (task name, progetto, risorsa, date inizio/fine)
-- Lista attività con edit e delete
-- Bottoni Export JSON / Import JSON
+**Left sidebar:**
+- Resource (people) management: add / delete
+- Project legend with auto-assigned colors
+- Add/edit task form (task name, project, resource, start/end dates)
+- Task list with edit and delete
+- Export JSON / Import JSON buttons
 
 **Main area:**
-- Toggle tre view: Gantt / Heatmap / Entrambi
-- **Gantt:** timeline inter-progetto, raggruppato per risorsa, barre colorate per progetto,
-  linea rossa = oggi, badge colorato sul nome risorsa (blu/giallo/rosso in base al numero task),
-  click sulla barra = edit
-- **Heatmap:** griglia risorsa × settimana, numero di attività parallele per cella,
-  colori da blu (1) → giallo (2) → arancione (3) → rosso (4+), hover = tooltip con dettaglio
+- Toggle between three views: Gantt / Heatmap / Both
+- **Gantt:** cross-project timeline, grouped by resource, color-coded bars by project,
+  red line = today, colored badge on resource name (blue/yellow/red based on task count),
+  click a bar = edit
+- **Heatmap:** resource × week grid, number of parallel activities per cell,
+  colors from blue (1) → yellow (2) → orange (3) → red (4+), hover = tooltip with details
 
-**Timeline:** calcolata automaticamente dalle date dei task (con padding di almeno 8 settimane).
-
----
-
-## Decisioni di design rilevanti
-
-- I colori dei progetti vengono assegnati automaticamente da una palette di 10 colori fissi
-  (`COLORS` array), senza intervento dell'utente
-- La heatmap è **derivata** dal Gantt, non compilata manualmente — questo è il punto chiave
-  per la credibilità verso il management ("il rosso non lo decido io, lo decidono le barre")
-- Dark theme: sfondo `#0A0F1E`, sidebar `#111827`
-- Font: Segoe UI / system-ui (niente CDN font per funzionare offline)
+**Timeline:** automatically calculated from task dates (with a minimum padding of 8 weeks).
 
 ---
 
-## Possibili step di sviluppo futuro
+## Relevant design decisions
 
-Elencati in ordine di priorità suggerita:
-
-1. **Stampa / export PDF** — bottone "Stampa" che apre il dialogo di stampa del browser
-   ottimizzato (print CSS, sfondo dark preservato, sidebar nascosta)
-2. **Filtro per risorsa** — mostrare nel Gantt solo una risorsa selezionata
-3. **Milestone** — marker verticale con etichetta (es. "Go-live Progetto X") sovrapposto al Gantt
-4. **Percentuale completamento** — barra con fill parziale + campo % nella card attività
-5. **Note attività** — campo testo libero aggiuntivo, visibile nel tooltip hover della barra
-6. **Multi-risorsa per task** — assegnare più risorse allo stesso task (attualmente 1:1)
-7. **Settimane di zoom** — slider per allargare/restringere la timeline (attualmente fissa)
-8. **Drag & drop date** — trascinare le barre per spostare le date (richiede libreria esterna
-   o implementazione custom, complessità alta)
+- Project colors are automatically assigned from a fixed 10-color palette
+  (`COLORS` array), without user intervention
+- The heatmap is **derived** from the Gantt, not filled in manually — this is the key point
+  for credibility with management ("the red isn't my decision, the bars decide it")
+- Dark theme: background `#0A0F1E`, sidebar `#111827`
+- Font: Segoe UI / system-ui (no CDN fonts, to work offline)
 
 ---
 
-## Come usare questo prompt
+## Possible future development steps
 
-1. Allega questo file `.md` + il file `pm-workload-board.html` a Claude
-2. Scrivi: *"Leggi il file di handoff e il codice HTML allegato, poi implementa [feature X]"*
-3. Claude restituirà il file HTML aggiornato da sostituire al precedente
+Listed in suggested priority order:
 
-**Nota:** il file HTML è self-contained, quindi ogni modifica produce un nuovo file completo
-da sostituire integralmente — non patch parziali.
+1. **Resource filter** — show only a selected resource in the Gantt view
+2. **Task notes** — free text field, visible in the bar hover tooltip
+3. **Multi-resource per task** — assign multiple resources to the same task (currently 1:1)
+4. **Horizontal scroll / timeline navigation** — scroll left/right to navigate the timeline
+   when tasks span many weeks, keeping bar proportions fixed
+5. **Print / PDF export** — "Print" button optimized for the browser print dialog
+   (print CSS, dark background preserved, sidebar hidden)
+6. **Milestone** — vertical marker with label (e.g. "Project X go-live") overlaid on the Gantt
+7. **Drag & drop dates** — drag bars to shift dates (high complexity)
+8. **Completion percentage** — partial fill bar + % field in the task card
+
+---
+
+## How to use this prompt
+
+1. Attach this `.md` file + the `pm-workload-board.html` file to Claude
+2. Write: *"Read the handoff file and the attached HTML code, then implement [feature X]"*
+3. Claude will return the updated HTML file to replace the previous one
+
+**Note:** the HTML file is self-contained, so every change produces a complete new file
+to be replaced entirely — no partial patches.
