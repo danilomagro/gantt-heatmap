@@ -350,6 +350,9 @@ function App() {
                                     }}
                                   >
                                     {task.taskName}
+                                    {task.notes && (
+                                      <div style={{position:"absolute", top:3, right:4, width:5, height:5, borderRadius:"50%", background:"#fff", opacity:0.6, flexShrink:0}} />
+                                    )}
                                   </div>
                                 </div>
                               </div>
