@@ -358,7 +358,7 @@ function App() {
                                   )}
                                   <div
                                     onClick={()=>editTask(task)}
-                                    title={`${task.taskName}\n${task.projectName}\n${task.startDate} → ${task.endDate}${task.notes ? "\n\n" + task.notes : ""}`}
+                                    title={(() => { const names = (task.resourceIds||[]).map(id=>resources.find(r=>r.id===id)?.name).filter(Boolean).join(", "); return `${task.taskName}\n${task.projectName}\n${task.startDate} → ${task.endDate}${names ? "\nResources: "+names : ""}${task.notes ? "\n\n"+task.notes : ""}`; })()}
                                     style={{
                                       position:"absolute", ...barStyle(task),
                                       height:22, borderRadius:5,
