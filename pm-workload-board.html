@@ -49,6 +49,7 @@ function App() {
   const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceId:"", startDate:"", endDate:"" });
   const [newRes, setNewRes] = React.useState("");
   const [sideOpen, setSideOpen] = React.useState(true);
+  const [filterResource, setFilterResource] = React.useState("");
 
   React.useEffect(() => {
     const r = storage.get(STORAGE_KEY);
@@ -146,6 +147,12 @@ function App() {
     e.target.value = "";
   };
 
+  React.useEffect(() => {
+    if (filterResource && !resources.find(r => r.id === filterResource)) {
+      setFilterResource("");
+    }
+  }, [resources]);
+
   const projects = [...new Set(tasks.map(t => t.projectName))];
 
   const S = {
@@ -199,6 +206,20 @@ function App() {
                 <button onClick={addResource} style={{padding:"7px 11px", borderRadius:6, border:"none", background:"#2563EB", color:"#fff", cursor:"pointer", fontSize:16, fontWeight:700, flexShrink:0}}>+</button>
               </div>
             </div>
+
+            {resources.length > 0 && (
+              <div>
+                <div style={S.label}>FILTER BY RESOURCE</div>
+                <select
+                  value={filterResource}
+                  onChange={e => setFilterResource(e.target.value)}
+                  style={{...S.input, color: filterResource ? "#E2E8F0" : "#4B5563"}}
+                >
+                  <option value="">All resources</option>
+                  {resources.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+              </div>
+            )}
 
             {projects.length > 0 && (
               <div>
@@ -284,7 +305,7 @@ function App() {
                       </div>
                     </div>
 
-                    {resources.map(res => {
+                    {resources.filter(res => !filterResource || res.id === filterResource).map(res => {
                       const resTasks = tasks.filter(t=>t.resourceId===res.id);
                       if (!resTasks.length) return null;
                       return (
@@ -351,7 +372,7 @@ function App() {
                         <div key={i} style={{flex:1, padding:"7px 3px", fontSize:9, color:"#4B5563", textAlign:"center", borderRight:i<weeks.length-1?"1px solid #1F2937":"", fontWeight:600}}>{fmtShort(w)}</div>
                       ))}
                     </div>
-                    {heatmap.filter(h=>tasks.some(t=>t.resourceId===h.res.id)).map(({res,cols}) => (
+                    {heatmap.filter(h=>tasks.some(t=>t.resourceId===h.res.id)).filter(h => !filterResource || h.res.id === filterResource).map(({res,cols}) => (
                       <div key={res.id} style={{display:"flex", borderTop:"1px solid #1F2937"}}>
                         <div style={{width:148, flexShrink:0, padding:"10px", fontSize:12, fontWeight:600, color:"#D1D5DB", borderRight:"1px solid #1F2937", display:"flex", alignItems:"center"}}>{res.name}</div>
                         {cols.map((cellTasks,i) => {
