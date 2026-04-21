@@ -442,7 +442,7 @@ function App() {
                               style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", background:heatBg(totalN), borderRight:i<weeks.length-1?"1px solid rgba(255,255,255,0.04)":"", minHeight:42, cursor:totalN>0?"pointer":"default"}}
                             >
                               {totalN>0 && (
-                                <span style={{fontSize:filterProject?11:15, fontWeight:800, color:heatFg(totalN), letterSpacing:filterProject?"-0.5px":"normal"}}>
+                                <span style={{fontSize:11, fontWeight:800, color:heatFg(totalN), letterSpacing:"-0.5px"}}>
                                   {filterProject ? `${projectN}/${totalN}` : totalN}
                                 </span>
                               )}
