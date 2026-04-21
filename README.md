@@ -55,11 +55,11 @@ Open `pm-workload-board.html` in your browser — no server needed, works offlin
 
 Most tools like this don't exist as single HTML files you can double-click. They're SaaS products, Jira plugins, or Excel macros that require setup, licenses, or IT approval.
 
-This one started as a real need — **[Danilo Magro](https://www.linkedin.com/in/danilo-magro/)**, a Technical Project Manager with 28+ years of experience, needed something lightweight, portable, and credible enough to show to management without explaining how it was built.
+This one started as a real need — a PM who wanted something lightweight, portable, and credible enough to show to management. No setup, no explanations required.
 
 The implementation was handled entirely by **[Claude Code](https://claude.ai)** (Anthropic) through an iterative session. No code was written by hand — every feature was specified, refined, and corrected through natural language.
 
-> Danilo's role: the problem, the vision, the UX decisions, and the relentless "yes but what if..."  
+> **[Danilo Magro](https://www.linkedin.com/in/danilo-magro/)**'s role: the problem, the vision, the UX decisions, and the relentless "yes but what if..."  
 > Claude's role: everything that runs in the browser.
 
 ---
