@@ -1,101 +1,82 @@
-# gantt-heatmap
+# ◈ PM WORKLOAD BOARD
 
-A cross-project Gantt + capacity heatmap tool for project managers handling multiple simultaneous implementations.
+> *"If the team looks slow, show them the bars. If they still don't believe you, show them the heatmap."*
 
-![Preview](preview.png)
+A single-file **cross-project Gantt and capacity heatmap tool** for project managers handling multiple simultaneous implementations. No backend, no dependencies to install, no build step. Just open `pm-workload-board.html`.
 
----
-
-## What it does
-
-Project managers juggling 7–8 concurrent projects — a mix of maintenance and large implementations spanning weeks — need an objective, visual artifact to show management where team capacity is actually going.
-
-**gantt-heatmap** solves this with two linked views:
-
-- **Gantt** — inter-project timeline grouped by resource, color-coded by project, with a live "today" marker
-- **Heatmap** — resource × week grid showing parallel workload intensity, derived automatically from the Gantt data (blue → yellow → orange → red)
-
-The heatmap is not filled in manually. It is computed from the task bars. That distinction matters when presenting to stakeholders.
+![PM Workload Board preview](preview.png)
 
 ---
 
-## Key features
+## The problem it solves
 
-- Single HTML file — open with a double-click, no server, no install, works offline
-- Add and manage team members (resources) and tasks from a sidebar panel
-- Tasks assigned to a project get an auto-assigned color from a fixed palette
-- Three view modes: Gantt only / Heatmap only / Both
-- Export and import data as JSON for backup or cross-device sync
-- Data persists in `localStorage` between sessions
+Managing 5+ parallel implementations across a team? When management asks why delivery is slow, gut feeling doesn't cut it. This tool gives you an **objective, inattackable visual** — a Gantt that shows what's running and when, and a heatmap that derives team load automatically from the same data.
+
+The heatmap is never filled in manually. Red means red because the bars say so.
 
 ---
 
-## Tech stack
+## Features
 
-| Layer | Choice |
+| | |
 |---|---|
-| UI framework | React 18 (CDN) |
-| JSX compilation | Babel standalone (in-browser) |
-| Styling | Inline styles, dark theme (`#0A0F1E`) |
-| Persistence | `localStorage` (key: `pm-gantt-v2`) |
-| Dependencies | None — fully self-contained |
+| **Cross-project Gantt** | Timeline grouped by resource, bars coloured by project, red line = today, click bar to edit |
+| **Capacity Heatmap** | Derived automatically from Gantt — resource × week grid, blue → amber → red by parallel task count |
+| **Resource & Project filters** | Focus either view on one person or one project — filters compose, heatmap always shows real total load |
+| **Multi-resource tasks** | Assign a task to multiple people — load propagates to each resource in both views |
+| **Task notes** | Optional free-text notes per task, visible on hover, with a subtle dot indicator on the bar |
+| **Export / Import JSON** | Full data portability — sync between devices or share snapshots with your team |
+| **Synchronized horizontal scroll** | Both views scroll in sync when tasks span many weeks; resource column stays fixed |
 
 ---
 
-## Getting started
+## Usage
 
-1. Download `pm-workload-board.html`
-2. Open it in any modern browser
-3. Add your team members under **Risorse**, then add tasks
-4. Switch between Gantt, Heatmap, and Both views using the header buttons
-
-No build step. No package manager. No network required after the file is on disk.
-
----
-
-## Data structure
-
-Data is stored in `localStorage` under the key `pm-gantt-v2` as JSON:
-
-```json
-{
-  "t": [
-    {
-      "id": "timestamp string",
-      "taskName": "Task name",
-      "projectName": "Project name",
-      "resourceId": "resource id",
-      "startDate": "YYYY-MM-DD",
-      "endDate": "YYYY-MM-DD"
-    }
-  ],
-  "r": [
-    { "id": "timestamp string", "name": "Resource name" }
-  ],
-  "c": {
-    "Project name": "#HEX color"
-  }
-}
+```bash
+git clone https://github.com/danilomagro/gantt-heatmap.git
+cd gantt-heatmap
 ```
 
-Use **Export JSON** to download a backup and **Import JSON** to restore it on another device.
+Open `pm-workload-board.html` in your browser — no server needed, works offline after first load.
+
+**To try it immediately**: click **Import** and select `sample-data.json` — a realistic 18-week scenario across 3 resources and 5 projects loads instantly.
+
+---
+
+## Technical notes
+
+- Single HTML file — React 18 + Babel standalone loaded from CDN, everything else self-contained
+- Data stored in `localStorage` — survives page reloads, no account required
+- Nothing leaves your machine
+
+---
+
+## The making of
+
+Most tools like this don't exist as single HTML files you can double-click. They're SaaS products, Jira plugins, or Excel macros that require setup, licenses, or IT approval.
+
+This one started as a real need — **[Danilo Magro](https://www.linkedin.com/in/danilo-magro/)**, a Technical Project Manager with 28+ years of experience, needed something lightweight, portable, and credible enough to show to management without explaining how it was built.
+
+The implementation was handled entirely by **[Claude Code](https://claude.ai)** (Anthropic) through an iterative session. No code was written by hand — every feature was specified, refined, and corrected through natural language.
+
+> Danilo's role: the problem, the vision, the UX decisions, and the relentless "yes but what if..."  
+> Claude's role: everything that runs in the browser.
 
 ---
 
 ## Status
 
-Work in progress — features are being actively developed. See the [handoff document](pm-workload-board-handoff.md) for the prioritized roadmap.
+🚧 **Work in progress** — actively developed.
 
----
-
-## Author
-
-**Danilo Magro** — [linkedin.com/in/danilo-magro](https://www.linkedin.com/in/danilo-magro/)
-
-Built via AI-assisted development with [Claude](https://anthropic.com) (Anthropic). Conceived by a human, coded by AI.
+- [ ] Print / PDF export
+- [ ] Milestone markers on Gantt
+- [ ] Drag & drop to reschedule tasks
+- [ ] Completion percentage per task
+- [ ] Light theme toggle
 
 ---
 
 ## License
 
-[MIT](LICENSE) © 2026 Danilo Magro
+MIT — do whatever you want with it.  
+If you're a PM drowning in parallel projects, I hope this helps.
