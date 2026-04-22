@@ -69,6 +69,11 @@
     { "id": "1700000002000", "name": "Sarah" },
     { "id": "1700000003000", "name": "Marco" }
   ],
+  "m": [
+    { "id": "1700002001000", "name": "ERP Go-Live",     "date": "2026-05-11", "color": "#F59E0B" },
+    { "id": "1700002002000", "name": "UAT Freeze",      "date": "2026-06-15", "color": "#3A86FF" },
+    { "id": "1700002003000", "name": "Mobile Release",  "date": "2026-08-10", "color": "#A78BFA" }
+  ],
   "c": {
     "ERP Migration":      "#E84855",
     "API Gateway":        "#3A86FF",

@@ -82,6 +82,7 @@
 <script type="text/babel">
 
 const COLORS = ["#E84855","#3A86FF","#06D6A0","#FFB703","#8338EC","#FF6B35","#4ECDC4","#A78BFA","#F472B6","#34D399"];
+const MILESTONE_COLORS = ["#F59E0B","#EF4444","#06D6A0","#3A86FF","#A78BFA"];
 const STORAGE_KEY = "pm-gantt-v2";
 const MIN_WEEK_W = 80;
 
@@ -113,8 +114,10 @@ function App() {
   const [tasks, setTasks] = React.useState([]);
   const [resources, setResources] = React.useState([]);
   const [pColors, setPColors] = React.useState({});
+  const [milestones, setMilestones] = React.useState([]);
   const [view, setView] = React.useState("both");
   const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"" });
+  const [mForm, setMForm] = React.useState({ name:"", date:"", color:"#F59E0B" });
   const [newRes, setNewRes] = React.useState("");
   const [sideOpen, setSideOpen] = React.useState(true);
   const [filterResource, setFilterResource] = React.useState("");
@@ -153,10 +156,10 @@ function App() {
 
   React.useEffect(() => {
     const r = storage.get(STORAGE_KEY);
-    if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); } catch {} }
+    if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); } catch {} }
   }, []);
 
-  const persist = (t, r, c) => storage.set(STORAGE_KEY, JSON.stringify({ t, r, c }));
+  const persist = (t, r, c, m) => storage.set(STORAGE_KEY, JSON.stringify({ t, r, c, m }));
 
   const weeks = React.useMemo(() => {
     const ws = [];
@@ -209,14 +212,14 @@ function App() {
   const addResource = () => {
     if (!newRes.trim()) return;
     const r = [...resources, { id: Date.now().toString(), name: newRes.trim() }];
-    setResources(r); persist(tasks, r, pColors); setNewRes("");
+    setResources(r); persist(tasks, r, pColors, milestones); setNewRes("");
   };
   const delResource = id => {
     const r = resources.filter(x => x.id!==id);
     const t = tasks
       .map(x => ({ ...x, resourceIds: x.resourceIds.filter(rid => rid!==id) }))
       .filter(x => x.resourceIds.length > 0);
-    setResources(r); setTasks(t); persist(t, r, pColors);
+    setResources(r); setTasks(t); persist(t, r, pColors, milestones);
   };
   const submitForm = () => {
     const { id, taskName, projectName, resourceIds, startDate, endDate, notes } = form;
@@ -225,14 +228,25 @@ function App() {
     const t = id
       ? tasks.map(x => x.id===id ? {...x,taskName,projectName,resourceIds,startDate,endDate,notes} : x)
       : [...tasks, { id:Date.now().toString(), taskName, projectName, resourceIds, startDate, endDate, notes }];
-    setTasks(t); setPColors(c); persist(t, resources, c);
+    setTasks(t); setPColors(c); persist(t, resources, c, milestones);
     setForm({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"" });
   };
-  const delTask = id => { const t = tasks.filter(x => x.id!==id); setTasks(t); persist(t,resources,pColors); };
+  const delTask = id => { const t = tasks.filter(x => x.id!==id); setTasks(t); persist(t,resources,pColors,milestones); };
   const editTask = task => setForm({...task, notes: task.notes || "", resourceIds: task.resourceIds || []});
 
+  const addMilestone = () => {
+    if (!mForm.name.trim() || !mForm.date) return;
+    const m = [...milestones, { id: Date.now().toString(), name: mForm.name.trim(), date: mForm.date, color: mForm.color }];
+    setMilestones(m); persist(tasks, resources, pColors, m);
+    setMForm({ name:"", date:"", color:"#F59E0B" });
+  };
+  const delMilestone = id => {
+    const m = milestones.filter(x => x.id!==id);
+    setMilestones(m); persist(tasks, resources, pColors, m);
+  };
+
   const exportJSON = () => {
-    const blob = new Blob([JSON.stringify({t:tasks,r:resources,c:pColors},null,2)], {type:"application/json"});
+    const blob = new Blob([JSON.stringify({t:tasks,r:resources,c:pColors,m:milestones},null,2)], {type:"application/json"});
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
     a.download = "pm-workload-backup.json"; a.click();
   };
@@ -242,8 +256,8 @@ function App() {
     reader.onload = ev => {
       try {
         const d = JSON.parse(ev.target.result);
-        setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{});
-        persist(d.t||[], d.r||[], d.c||{});
+        setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]);
+        persist(d.t||[], d.r||[], d.c||{}, d.m||[]);
       } catch { alert("Invalid file"); }
     };
     reader.readAsText(file);
@@ -370,6 +384,28 @@ function App() {
             )}
 
             <div>
+              <div style={S.label}>MILESTONES</div>
+              <input value={mForm.name} onChange={e=>setMForm({...mForm,name:e.target.value})} onKeyDown={e=>e.key==="Enter"&&addMilestone()} placeholder="Milestone name" style={{...S.input, marginBottom:5}} />
+              <input type="date" lang="en-GB" value={mForm.date} onChange={e=>setMForm({...mForm,date:e.target.value})} style={{...S.input, marginBottom:6, fontSize:11}} />
+              <div style={{display:"flex", gap:6, marginBottom:6, alignItems:"center"}}>
+                {MILESTONE_COLORS.map(col => (
+                  <div key={col} onClick={() => setMForm({...mForm,color:col})} style={{width:18, height:18, borderRadius:"50%", background:col, cursor:"pointer", flexShrink:0, boxShadow:mForm.color===col?`0 0 0 2px #111827, 0 0 0 4px ${col}`:"none"}} />
+                ))}
+              </div>
+              <button onClick={addMilestone} style={{width:"100%", padding:"6px", borderRadius:6, border:"none", background:"#1F2937", color:"#E2E8F0", fontSize:12, fontWeight:600, cursor:"pointer", marginBottom:6}}>+ Add Milestone</button>
+              {milestones.map(m => (
+                <div key={m.id} style={{display:"flex", alignItems:"center", gap:6, marginBottom:4}}>
+                  <div style={{width:3, height:16, background:m.color, borderRadius:1, flexShrink:0}} />
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{fontSize:11, color:"#E2E8F0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{m.name}</div>
+                    <div style={{fontSize:10, color:"#4B5563"}}>{m.date}</div>
+                  </div>
+                  <button onClick={()=>delMilestone(m.id)} style={{background:"none", border:"none", color:"#4B5563", cursor:"pointer", fontSize:14, flexShrink:0}}>×</button>
+                </div>
+              ))}
+            </div>
+
+            <div>
               <div style={S.label}>{form.id?"EDIT TASK":"NEW TASK"}</div>
               <input value={form.taskName} onChange={e=>setForm({...form,taskName:e.target.value})} placeholder="Task name" style={{...S.input, marginBottom:5}} />
               <input value={form.projectName} onChange={e=>setForm({...form,projectName:e.target.value})} placeholder="Project name" style={{...S.input, marginBottom:5}} list="projects-list" />
@@ -461,7 +497,16 @@ function App() {
 
                     {/* Horizontally scrollable body */}
                     <div ref={ganttScrollRef} style={{overflowX:"auto"}} onScroll={handleGanttScroll}>
-                      <div style={{minWidth:148 + timelineWidth}}>
+                      <div style={{minWidth:148 + timelineWidth, position:"relative"}}>
+                        {milestones.map(m => {
+                          const mLeft = (parseDate(m.date) - timelineStart) / 86400000 * dayW;
+                          if (mLeft < 0 || mLeft > timelineWidth) return null;
+                          return (
+                            <div key={m.id} style={{position:"absolute", top:0, bottom:0, left:148 + mLeft, width:2, background:m.color, zIndex:4, pointerEvents:"none", opacity:0.9}}>
+                              <div style={{position:"absolute", top:4, left:4, fontSize:9, color:m.color, fontWeight:700, whiteSpace:"nowrap", background:"rgba(10,15,30,0.85)", padding:"2px 5px", borderRadius:3, letterSpacing:"0.02em"}}>◆ {m.name}</div>
+                            </div>
+                          );
+                        })}
                         {resources.filter(res => !filterResource || res.id === filterResource).map(res => {
                           const resTasks = tasks.filter(t=>t.resourceIds.includes(res.id) && (!filterProject || t.projectName===filterProject));
                           if (!resTasks.length) return null;
