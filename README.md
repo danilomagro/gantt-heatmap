@@ -24,8 +24,10 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Capacity Heatmap** | Derived automatically from Gantt — resource × week grid, blue → amber → red by parallel task count |
 | **Resource & Project filters** | Focus either view on one person or one project — filters compose, heatmap always shows real total load |
 | **Multi-resource tasks** | Assign a task to multiple people — load propagates to each resource in both views |
+| **Milestone markers** | Vertical overlays on the Gantt with custom label and colour — go-live dates, UAT freezes, deployment windows |
 | **Task notes** | Optional free-text notes per task, visible on hover, with a subtle dot indicator on the bar |
 | **Export / Import JSON** | Full data portability — sync between devices or share snapshots with your team |
+| **Print / PDF export** | Browser print dialog, landscape layout, sidebar hidden, colours preserved |
 | **Synchronized horizontal scroll** | Both views scroll in sync when tasks span many weeks; resource column stays fixed |
 
 ---
@@ -39,7 +41,7 @@ cd gantt-heatmap
 
 Open `pm-workload-board.html` in your browser — no server needed, works offline after first load.
 
-**To try it immediately**: click **Import** and select `sample-data.json` — a realistic 18-week scenario across 3 resources and 5 projects loads instantly.
+**To try it immediately**: click **Import** and select `sample-data.json` — a realistic 18-week scenario across 3 resources, 5 projects, and 3 milestones loads instantly.
 
 ---
 
@@ -68,11 +70,10 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 
 🚧 **Work in progress** — actively developed.
 
-- [ ] Print / PDF export
-- [ ] Milestone markers on Gantt
-- [ ] Drag & drop to reschedule tasks
+- [ ] Light / dark theme toggle
 - [ ] Completion percentage per task
-- [ ] Light theme toggle
+- [ ] Drag & drop to reschedule tasks
+- [ ] Print layout optimisation for large datasets
 
 ---
 
