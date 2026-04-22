@@ -15,6 +15,61 @@
   ::-webkit-scrollbar-thumb { background: #1F2937; border-radius: 3px; }
   input, select { color-scheme: dark; }
   input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
+
+  @page { size: landscape; }
+
+  @media print {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+
+    /* Whitelist approach: blank the entire page, then reveal only the chart area. */
+    body * { visibility: hidden; }
+
+    /* Explicitly hide the header (contains Gantt/Heatmap/Both toggles + Export/Import/Print).
+       Both properties used: display:none removes layout space, visibility:hidden is the
+       fallback in case inline display:flex overrides display:none in this browser. */
+    header {
+      display: none !important;
+      visibility: hidden !important;
+    }
+
+    #pm-layout,
+    #pm-layout * {
+      visibility: visible;
+    }
+
+    #pm-layout {
+      position: fixed;
+      top: 0;
+      left: 0;
+      /* Compensate for scale() shrinking the layout box: the element still occupies
+         its pre-transform width, so widening it by 1/scale fills the page correctly. */
+      width: calc(100% / 0.95);
+      height: auto;
+      transform: scale(0.95);
+      transform-origin: top center;
+    }
+
+    /* Re-hide the sidebar within the visible region using visibility (avoids the
+       inline-style display conflict that broke the previous approach). */
+    #pm-sidebar,
+    #pm-sidebar * {
+      visibility: hidden;
+    }
+
+    /* Collapse the sidebar's flex space so main expands to full width. */
+    #pm-sidebar {
+      flex: 0 0 0 !important;
+      width: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      border: none !important;
+    }
+
+    /* Remove overflow constraints so Gantt and Heatmap render without clipping. */
+    main { overflow: visible !important; }
+    [style*="overflow-x: auto"] { overflow: visible !important; }
+  }
 </style>
 </head>
 <body>
@@ -243,17 +298,18 @@ function App() {
             </button>
           ))}
           <div style={{width:1, height:18, background:"#1F2937", margin:"0 4px"}} />
-          <button onClick={exportJSON} style={{...S.btn(false), color:"#34D399"}}>⬇ Export</button>
-          <label style={{...S.btn(false), color:"#60A5FA", cursor:"pointer"}}>
+          <button onClick={exportJSON} className="no-print" style={{...S.btn(false), color:"#34D399"}}>⬇ Export</button>
+          <label className="no-print" style={{...S.btn(false), color:"#60A5FA", cursor:"pointer"}}>
             ⬆ Import<input type="file" accept=".json" onChange={importJSON} style={{display:"none"}} />
           </label>
+          <button onClick={() => window.print()} className="no-print" style={{...S.btn(false), color:"#A78BFA"}}>🖨 Print</button>
           <button onClick={() => setSideOpen(o=>!o)} style={{...S.btn(false), display:"none"}} id="toggleSide">☰</button>
         </div>
       </header>
 
-      <div style={{display:"flex", flex:1, overflow:"hidden"}}>
+      <div id="pm-layout" style={{display:"flex", flex:1, overflow:"hidden"}}>
         {sideOpen && (
-          <aside style={S.aside}>
+          <aside id="pm-sidebar" style={S.aside}>
             <div>
               <div style={S.label}>RESOURCES</div>
               {resources.map(r => (
