@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en-GB" data-theme="dark">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,17 +9,66 @@
 <meta property="og:image" content="https://danilomagro.github.io/gantt-heatmap/preview.png" />
 <meta property="og:url" content="https://danilomagro.github.io/gantt-heatmap/" />
 <meta property="og:type" content="website" />
+<!-- Apply saved theme before React mounts to prevent flash -->
+<script>try{var t=localStorage.getItem("pm-gantt-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0A0F1E; color: #E2E8F0; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+  [data-theme="dark"] {
+    --bg:               #0A0F1E;
+    --surface:          #111827;
+    --surface-2:        #0F172A;
+    --surface-3:        #0D1524;
+    --border:           #1F2937;
+    --border-subtle:    rgba(255,255,255,0.04);
+    --text:             #E2E8F0;
+    --text-bright:      #F9FAFB;
+    --text-dim:         #6B7280;
+    --text-dimmer:      #4B5563;
+    --text-faint:       #374151;
+    --text-muted:       #9CA3AF;
+    --text-heatmap-res: #D1D5DB;
+    --input-bg:         #0A0F1E;
+    --card-bg:          #0A0F1E;
+    --btn-bg:           #1F2937;
+    --btn-color:        #6B7280;
+    --heat-0:           #1E293B;
+    --row-alt:          rgba(255,255,255,0.01);
+    color-scheme: dark;
+  }
+
+  [data-theme="light"] {
+    --bg:               #F8FAFC;
+    --surface:          #FFFFFF;
+    --surface-2:        #E2E8F0;
+    --surface-3:        #EEF2F7;
+    --border:           #CBD5E1;
+    --border-subtle:    rgba(0,0,0,0.06);
+    --text:             #0F172A;
+    --text-bright:      #020617;
+    --text-dim:         #475569;
+    --text-dimmer:      #64748B;
+    --text-faint:       #94A3B8;
+    --text-muted:       #374151;
+    --text-heatmap-res: #1E293B;
+    --input-bg:         #FFFFFF;
+    --card-bg:          #F1F5F9;
+    --btn-bg:           #E2E8F0;
+    --btn-color:        #374151;
+    --heat-0:           #E2E8F0;
+    --row-alt:          rgba(0,0,0,0.02);
+    color-scheme: light;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0A0F1E; }
-  ::-webkit-scrollbar-thumb { background: #1F2937; border-radius: 3px; }
-  input, select { color-scheme: dark; }
-  input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  input, select { color-scheme: inherit; }
+  [data-theme="dark"] input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 
   @page { size: landscape; }
 
@@ -27,12 +76,8 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
 
-    /* Whitelist approach: blank the entire page, then reveal only the chart area. */
     body * { visibility: hidden; }
 
-    /* Explicitly hide the header (contains Gantt/Heatmap/Both toggles + Export/Import/Print).
-       Both properties used: display:none removes layout space, visibility:hidden is the
-       fallback in case inline display:flex overrides display:none in this browser. */
     header {
       display: none !important;
       visibility: hidden !important;
@@ -47,22 +92,17 @@
       position: fixed;
       top: 0;
       left: 0;
-      /* Compensate for scale() shrinking the layout box: the element still occupies
-         its pre-transform width, so widening it by 1/scale fills the page correctly. */
       width: calc(100% / 0.95);
       height: auto;
       transform: scale(0.95);
       transform-origin: top center;
     }
 
-    /* Re-hide the sidebar within the visible region using visibility (avoids the
-       inline-style display conflict that broke the previous approach). */
     #pm-sidebar,
     #pm-sidebar * {
       visibility: hidden;
     }
 
-    /* Collapse the sidebar's flex space so main expands to full width. */
     #pm-sidebar {
       flex: 0 0 0 !important;
       width: 0 !important;
@@ -71,7 +111,6 @@
       border: none !important;
     }
 
-    /* Remove overflow constraints so Gantt and Heatmap render without clipping. */
     main { overflow: visible !important; }
     [style*="overflow-x: auto"] { overflow: visible !important; }
   }
@@ -84,7 +123,8 @@
 const COLORS = ["#E84855","#3A86FF","#06D6A0","#FFB703","#8338EC","#FF6B35","#4ECDC4","#A78BFA","#F472B6","#34D399"];
 const MILESTONE_COLORS = ["#F59E0B","#EF4444","#06D6A0","#3A86FF","#A78BFA"];
 const STORAGE_KEY = "pm-gantt-v2";
-const MIN_WEEK_W = 80;
+const THEME_KEY   = "pm-gantt-theme";
+const MIN_WEEK_W  = 80;
 
 function parseDate(s) { return new Date(s + "T00:00:00"); }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
@@ -94,10 +134,9 @@ function startOfMonday(d) {
   r.setDate(r.getDate() + diff); r.setHours(0,0,0,0); return r;
 }
 function fmtShort(d) { return d.toLocaleDateString("en-GB", { day:"2-digit", month:"short" }); }
-const heatBg = n => ["#1E293B","#1E3A5F","#7C3D12","#7F1D1D","#4C0519"][Math.min(n,4)];
-const heatFg = n => n===0?"#334155": n===1?"#93C5FD": n===2?"#FDE68A":"#FCA5A5";
+const heatBg = n => n === 0 ? "var(--heat-0)" : ["#1E3A5F","#7C3D12","#7F1D1D","#4C0519"][Math.min(n-1,3)];
+const heatFg = n => n===1?"#93C5FD": n===2?"#FDE68A":"#FCA5A5";
 
-// localStorage-based storage (replaces window.storage from Claude artifacts)
 const storage = {
   get: (key) => { try { const v = localStorage.getItem(key); return v ? { value: v } : null; } catch { return null; } },
   set: (key, val) => { try { localStorage.setItem(key, val); } catch {} },
@@ -115,6 +154,9 @@ function App() {
   const [resources, setResources] = React.useState([]);
   const [pColors, setPColors] = React.useState({});
   const [milestones, setMilestones] = React.useState([]);
+  const [theme, setTheme] = React.useState(() => {
+    try { return localStorage.getItem(THEME_KEY) || "dark"; } catch { return "dark"; }
+  });
   const [view, setView] = React.useState("both");
   const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"" });
   const [mForm, setMForm] = React.useState({ name:"", date:"", color:"#F59E0B" });
@@ -131,6 +173,13 @@ function App() {
   const heatScrollRef  = React.useRef(null);
   const heatHeaderRef  = React.useRef(null);
   const isSyncing      = React.useRef(false);
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    try { localStorage.setItem(THEME_KEY, theme); } catch {}
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
   const handleGanttScroll = React.useCallback(e => {
     const sl = e.currentTarget.scrollLeft;
@@ -291,24 +340,24 @@ function App() {
   const projects = [...new Set(tasks.map(t => t.projectName))];
 
   const S = {
-    app: { fontFamily:"'Segoe UI',system-ui,sans-serif", background:"#0A0F1E", minHeight:"100vh", display:"flex", flexDirection:"column", color:"#E2E8F0" },
-    header: { background:"#111827", borderBottom:"1px solid #1F2937", padding:"10px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap" },
-    aside: { width:256, background:"#111827", borderRight:"1px solid #1F2937", padding:"14px 12px", overflowY:"auto", flexShrink:0, display:"flex", flexDirection:"column", gap:16 },
-    main: { flex:1, overflowY:"auto", overflowX:"hidden", padding:"16px 20px", minWidth:0 },
-    label: { fontSize:10, fontWeight:700, color:"#4B5563", letterSpacing:"0.12em", marginBottom:6 },
-    input: { width:"100%", padding:"7px 9px", borderRadius:6, border:"1px solid #1F2937", background:"#0A0F1E", color:"#E2E8F0", fontSize:12, outline:"none" },
-    btn: active => ({ padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer", fontSize:12, fontWeight:600, background:active?"#2563EB":"#1F2937", color:active?"#fff":"#6B7280" }),
-    card: { background:"#0A0F1E", borderRadius:6, padding:"8px 10px", marginBottom:6 },
-    sectionTitle: { fontSize:11, fontWeight:700, color:"#4B5563", letterSpacing:"0.1em", marginBottom:10 },
-    sectionBox: { background:"#111827", borderRadius:10, border:"1px solid #1F2937", overflow:"clip" },
+    app:          { fontFamily:"'Segoe UI',system-ui,sans-serif", background:"var(--bg)", minHeight:"100vh", display:"flex", flexDirection:"column", color:"var(--text)" },
+    header:       { background:"var(--surface)", borderBottom:"1px solid var(--border)", padding:"10px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap" },
+    aside:        { width:256, background:"var(--surface)", borderRight:"1px solid var(--border)", padding:"14px 12px", overflowY:"auto", flexShrink:0, display:"flex", flexDirection:"column", gap:16 },
+    main:         { flex:1, overflowY:"auto", overflowX:"hidden", padding:"16px 20px", minWidth:0 },
+    label:        { fontSize:10, fontWeight:700, color:"var(--text-dimmer)", letterSpacing:"0.12em", marginBottom:6 },
+    input:        { width:"100%", padding:"7px 9px", borderRadius:6, border:"1px solid var(--border)", background:"var(--input-bg)", color:"var(--text)", fontSize:12, outline:"none" },
+    btn:          active => ({ padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer", fontSize:12, fontWeight:600, background:active?"#2563EB":"var(--btn-bg)", color:active?"#fff":"var(--btn-color)" }),
+    card:         { background:"var(--card-bg)", borderRadius:6, padding:"8px 10px", marginBottom:6 },
+    sectionTitle: { fontSize:11, fontWeight:700, color:"var(--text-dimmer)", letterSpacing:"0.1em", marginBottom:10 },
+    sectionBox:   { background:"var(--surface)", borderRadius:10, border:"1px solid var(--border)", overflow:"clip" },
   };
 
   return (
     <div style={S.app}>
       <header style={S.header}>
         <div style={{display:"flex", alignItems:"baseline", gap:12}}>
-          <span style={{fontWeight:800, fontSize:16, letterSpacing:"-0.5px", color:"#F9FAFB"}}>PM Workload Board</span>
-          <span style={{fontFamily:"monospace", fontSize:11, color:"#374151"}}>{tasks.length} tasks · {resources.length} resources</span>
+          <span style={{fontWeight:800, fontSize:16, letterSpacing:"-0.5px", color:"var(--text-bright)"}}>PM Workload Board</span>
+          <span style={{fontFamily:"monospace", fontSize:11, color:"var(--text-faint)"}}>{tasks.length} tasks · {resources.length} resources</span>
         </div>
         <div style={{display:"flex", gap:6, flexWrap:"wrap", alignItems:"center"}}>
           {["gantt","heatmap","both"].map(v => (
@@ -316,7 +365,11 @@ function App() {
               {v==="both"?"Both":v.charAt(0).toUpperCase()+v.slice(1)}
             </button>
           ))}
-          <div style={{width:1, height:18, background:"#1F2937", margin:"0 4px"}} />
+          <div style={{width:1, height:18, background:"var(--border)", margin:"0 4px"}} />
+          <button onClick={toggleTheme} title={theme==="dark"?"Switch to light theme":"Switch to dark theme"} style={S.btn(false)}>
+            {theme==="dark" ? "☀" : "🌙"}
+          </button>
+          <div style={{width:1, height:18, background:"var(--border)", margin:"0 4px"}} />
           <button onClick={exportJSON} className="no-print" style={{...S.btn(false), color:"#34D399"}}>⬇ Export</button>
           <label className="no-print" style={{...S.btn(false), color:"#60A5FA", cursor:"pointer"}}>
             ⬆ Import<input type="file" accept=".json" onChange={importJSON} style={{display:"none"}} />
@@ -334,7 +387,7 @@ function App() {
               {resources.map(r => (
                 <div key={r.id} style={{...S.card, display:"flex", alignItems:"center", justifyContent:"space-between"}}>
                   <span style={{fontSize:12}}>{r.name}</span>
-                  <button onClick={() => delResource(r.id)} style={{background:"none", border:"none", color:"#4B5563", cursor:"pointer", fontSize:15}}>×</button>
+                  <button onClick={() => delResource(r.id)} style={{background:"none", border:"none", color:"var(--text-dimmer)", cursor:"pointer", fontSize:15}}>×</button>
                 </div>
               ))}
               <div style={{display:"flex", gap:4, marginTop:4}}>
@@ -349,7 +402,7 @@ function App() {
                 <select
                   value={filterResource}
                   onChange={e => setFilterResource(e.target.value)}
-                  style={{...S.input, color: filterResource ? "#E2E8F0" : "#4B5563"}}
+                  style={{...S.input, color: filterResource ? "var(--text)" : "var(--text-dimmer)"}}
                 >
                   <option value="">All resources</option>
                   {resources.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -363,7 +416,7 @@ function App() {
                 <select
                   value={filterProject}
                   onChange={e => setFilterProject(e.target.value)}
-                  style={{...S.input, color: filterProject ? "#E2E8F0" : "#4B5563"}}
+                  style={{...S.input, color: filterProject ? "var(--text)" : "var(--text-dimmer)"}}
                 >
                   <option value="">All projects</option>
                   {projects.map(p => <option key={p} value={p}>{p}</option>)}
@@ -377,7 +430,7 @@ function App() {
                 {projects.map(p => (
                   <div key={p} style={{display:"flex", alignItems:"center", gap:7, marginBottom:4}}>
                     <div style={{width:10, height:10, borderRadius:2, background:pColors[p], flexShrink:0}} />
-                    <span style={{fontSize:11, color:"#9CA3AF", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p}</span>
+                    <span style={{fontSize:11, color:"var(--text-muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p}</span>
                   </div>
                 ))}
               </div>
@@ -389,18 +442,18 @@ function App() {
               <input type="date" lang="en-GB" value={mForm.date} onChange={e=>setMForm({...mForm,date:e.target.value})} style={{...S.input, marginBottom:6, fontSize:11}} />
               <div style={{display:"flex", gap:6, marginBottom:6, alignItems:"center"}}>
                 {MILESTONE_COLORS.map(col => (
-                  <div key={col} onClick={() => setMForm({...mForm,color:col})} style={{width:18, height:18, borderRadius:"50%", background:col, cursor:"pointer", flexShrink:0, boxShadow:mForm.color===col?`0 0 0 2px #111827, 0 0 0 4px ${col}`:"none"}} />
+                  <div key={col} onClick={() => setMForm({...mForm,color:col})} style={{width:18, height:18, borderRadius:"50%", background:col, cursor:"pointer", flexShrink:0, boxShadow:mForm.color===col?`0 0 0 2px var(--surface), 0 0 0 4px ${col}`:"none"}} />
                 ))}
               </div>
-              <button onClick={addMilestone} style={{width:"100%", padding:"6px", borderRadius:6, border:"none", background:"#1F2937", color:"#E2E8F0", fontSize:12, fontWeight:600, cursor:"pointer", marginBottom:6}}>+ Add Milestone</button>
+              <button onClick={addMilestone} style={{width:"100%", padding:"6px", borderRadius:6, border:"none", background:"var(--btn-bg)", color:"var(--text)", fontSize:12, fontWeight:600, cursor:"pointer", marginBottom:6}}>+ Add Milestone</button>
               {milestones.map(m => (
                 <div key={m.id} style={{display:"flex", alignItems:"center", gap:6, marginBottom:4}}>
                   <div style={{width:3, height:16, background:m.color, borderRadius:1, flexShrink:0}} />
                   <div style={{flex:1, minWidth:0}}>
-                    <div style={{fontSize:11, color:"#E2E8F0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{m.name}</div>
-                    <div style={{fontSize:10, color:"#4B5563"}}>{m.date}</div>
+                    <div style={{fontSize:11, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{m.name}</div>
+                    <div style={{fontSize:10, color:"var(--text-dimmer)"}}>{m.date}</div>
                   </div>
-                  <button onClick={()=>delMilestone(m.id)} style={{background:"none", border:"none", color:"#4B5563", cursor:"pointer", fontSize:14, flexShrink:0}}>×</button>
+                  <button onClick={()=>delMilestone(m.id)} style={{background:"none", border:"none", color:"var(--text-dimmer)", cursor:"pointer", fontSize:14, flexShrink:0}}>×</button>
                 </div>
               ))}
             </div>
@@ -410,9 +463,9 @@ function App() {
               <input value={form.taskName} onChange={e=>setForm({...form,taskName:e.target.value})} placeholder="Task name" style={{...S.input, marginBottom:5}} />
               <input value={form.projectName} onChange={e=>setForm({...form,projectName:e.target.value})} placeholder="Project name" style={{...S.input, marginBottom:5}} list="projects-list" />
               <datalist id="projects-list">{projects.map(p=><option key={p} value={p}/>)}</datalist>
-              <div style={{border:"1px solid #1F2937", borderRadius:6, background:"#0A0F1E", marginBottom:5, padding:"5px 9px", maxHeight:96, overflowY:"auto"}}>
+              <div style={{border:"1px solid var(--border)", borderRadius:6, background:"var(--input-bg)", marginBottom:5, padding:"5px 9px", maxHeight:96, overflowY:"auto"}}>
                 {resources.length === 0
-                  ? <span style={{fontSize:11, color:"#4B5563"}}>Add resources first</span>
+                  ? <span style={{fontSize:11, color:"var(--text-dimmer)"}}>Add resources first</span>
                   : resources.map(r => (
                       <label key={r.id} style={{display:"flex", alignItems:"center", gap:7, padding:"3px 0", cursor:"pointer"}}>
                         <input type="checkbox" checked={form.resourceIds.includes(r.id)}
@@ -421,7 +474,7 @@ function App() {
                             setForm({...form, resourceIds: ids});
                           }}
                           style={{accentColor:"#2563EB", cursor:"pointer"}} />
-                        <span style={{fontSize:12, color:"#E2E8F0"}}>{r.name}</span>
+                        <span style={{fontSize:12, color:"var(--text)"}}>{r.name}</span>
                       </label>
                     ))
                 }
@@ -436,7 +489,7 @@ function App() {
               </button>
               {form.id && (
                 <button onClick={()=>setForm({id:null,taskName:"",projectName:"",resourceIds:[],startDate:"",endDate:"",notes:""})}
-                  style={{width:"100%", padding:"6px", borderRadius:6, border:"1px solid #1F2937", background:"transparent", color:"#6B7280", fontSize:12, cursor:"pointer", marginTop:4}}>
+                  style={{width:"100%", padding:"6px", borderRadius:6, border:"1px solid var(--border)", background:"transparent", color:"var(--text-dim)", fontSize:12, cursor:"pointer", marginTop:4}}>
                   Cancel
                 </button>
               )}
@@ -450,11 +503,11 @@ function App() {
                   const col = pColors[t.projectName]||"#3B82F6";
                   return (
                     <div key={t.id} style={{...S.card, borderLeft:`3px solid ${col}`, marginBottom:5}}>
-                      <div style={{fontSize:12, fontWeight:600, color:"#E2E8F0", marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{t.taskName}</div>
-                      <div style={{fontSize:10, color:"#6B7280"}}>{t.projectName}</div>
-                      <div style={{fontSize:10, color:"#4B5563"}}>{resNames} · {t.startDate} → {t.endDate}</div>
+                      <div style={{fontSize:12, fontWeight:600, color:"var(--text)", marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{t.taskName}</div>
+                      <div style={{fontSize:10, color:"var(--text-dim)"}}>{t.projectName}</div>
+                      <div style={{fontSize:10, color:"var(--text-dimmer)"}}>{resNames} · {t.startDate} → {t.endDate}</div>
                       <div style={{display:"flex", gap:5, marginTop:6}}>
-                        <button onClick={()=>editTask(t)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"1px solid #1F2937", background:"transparent", color:"#9CA3AF", fontSize:10, cursor:"pointer"}}>✏ Edit</button>
+                        <button onClick={()=>editTask(t)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"1px solid var(--border)", background:"transparent", color:"var(--text-muted)", fontSize:10, cursor:"pointer"}}>✏ Edit</button>
                         <button onClick={()=>delTask(t.id)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"none", background:"rgba(127,29,29,0.5)", color:"#FCA5A5", fontSize:10, cursor:"pointer"}}>✕ Del</button>
                       </div>
                     </div>
@@ -467,10 +520,10 @@ function App() {
 
         <main ref={mainRef} style={S.main}>
           {tasks.length === 0 ? (
-            <div style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"80vh", color:"#374151", gap:8}}>
+            <div style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"80vh", color:"var(--text-faint)", gap:8}}>
               <div style={{fontSize:48}}>📊</div>
-              <div style={{fontSize:15, fontWeight:700, color:"#6B7280"}}>No tasks yet</div>
-              <div style={{fontSize:12, color:"#374151"}}>Add resources and tasks from the left panel</div>
+              <div style={{fontSize:15, fontWeight:700, color:"var(--text-dim)"}}>No tasks yet</div>
+              <div style={{fontSize:12, color:"var(--text-faint)"}}>Add resources and tasks from the left panel</div>
             </div>
           ) : (
             <div style={{display:"flex", flexDirection:"column", gap:24}}>
@@ -480,14 +533,13 @@ function App() {
                   <div style={S.sectionTitle}>GANTT — IMPLEMENTATION TIMELINE</div>
                   <div style={S.sectionBox}>
 
-                    {/* Sticky week header — outside the scroll container so it sticks vertically */}
-                    <div style={{display:"flex", borderBottom:"1px solid #1F2937", background:"#0F172A", position:"sticky", top:0, zIndex:10}}>
-                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"#374151", borderRight:"1px solid #1F2937", position:"relative", zIndex:11, background:"#0F172A"}}>Resource / Task</div>
-                      {/* overflow:clip clips translated week labels without creating a scroll container */}
+                    {/* Sticky week header */}
+                    <div style={{display:"flex", borderBottom:"1px solid var(--border)", background:"var(--surface-2)", position:"sticky", top:0, zIndex:10}}>
+                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>Resource / Task</div>
                       <div style={{flex:1, overflow:"clip"}}>
                         <div ref={ganttHeaderRef} style={{display:"flex"}}>
                           {weeks.map((w,i) => (
-                            <div key={i} style={{width:MIN_WEEK_W, flexShrink:0, padding:"7px 3px", fontSize:9, color:"#4B5563", textAlign:"center", borderRight:i<weeks.length-1?"1px solid #1F2937":"", background:i%2===0?"rgba(255,255,255,0.01)":"transparent", fontWeight:600, letterSpacing:"0.02em"}}>
+                            <div key={i} style={{width:MIN_WEEK_W, flexShrink:0, padding:"7px 3px", fontSize:9, color:"var(--text-dimmer)", textAlign:"center", borderRight:i<weeks.length-1?"1px solid var(--border)":"", background:i%2===0?"var(--row-alt)":"transparent", fontWeight:600, letterSpacing:"0.02em"}}>
                               {fmtShort(w)}
                             </div>
                           ))}
@@ -503,7 +555,7 @@ function App() {
                           if (mLeft < 0 || mLeft > timelineWidth) return null;
                           return (
                             <div key={m.id} style={{position:"absolute", top:0, bottom:0, left:148 + mLeft, width:2, background:m.color, zIndex:4, pointerEvents:"none", opacity:0.9}}>
-                              <div style={{position:"absolute", top:4, left:4, fontSize:9, color:m.color, fontWeight:700, whiteSpace:"nowrap", background:"rgba(10,15,30,0.85)", padding:"2px 5px", borderRadius:3, letterSpacing:"0.02em"}}>◆ {m.name}</div>
+                              <div style={{position:"absolute", top:4, left:4, fontSize:9, color:m.color, fontWeight:700, whiteSpace:"nowrap", background:"var(--bg)", padding:"2px 5px", borderRadius:3, letterSpacing:"0.02em"}}>◆ {m.name}</div>
                             </div>
                           );
                         })}
@@ -512,8 +564,8 @@ function App() {
                           if (!resTasks.length) return null;
                           return (
                             <div key={res.id}>
-                              <div style={{display:"flex", background:"#0D1524", borderTop:"1px solid #1F2937"}}>
-                                <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:11, fontWeight:700, color:"#9CA3AF", borderRight:"1px solid #1F2937", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"#0D1524", zIndex:3}}>
+                              <div style={{display:"flex", background:"var(--surface-3)", borderTop:"1px solid var(--border)"}}>
+                                <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:11, fontWeight:700, color:"var(--text-muted)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--surface-3)", zIndex:3}}>
                                   {res.name}
                                   <span style={{background:resTasks.length>=3?"#7F1D1D":resTasks.length===2?"#78350F":"#1E3A5F", color:resTasks.length>=3?"#FCA5A5":resTasks.length===2?"#FDE68A":"#93C5FD", borderRadius:9, padding:"1px 6px", fontSize:9, fontWeight:700}}>
                                     {resTasks.length}
@@ -524,14 +576,14 @@ function App() {
                               {resTasks.map(task => {
                                 const col = pColors[task.projectName]||"#3B82F6";
                                 return (
-                                  <div key={task.id} style={{display:"flex", borderTop:"1px solid rgba(255,255,255,0.03)", minHeight:40}}>
-                                    <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:10, color:"#6B7280", borderRight:"1px solid #1F2937", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"#0A0F1E", zIndex:3}}>
+                                  <div key={task.id} style={{display:"flex", borderTop:"1px solid var(--border-subtle)", minHeight:40}}>
+                                    <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:10, color:"var(--text-dim)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--bg)", zIndex:3}}>
                                       <div style={{width:7, height:7, borderRadius:2, background:col, flexShrink:0}} />
                                       <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{task.taskName}</span>
                                     </div>
                                     <div style={{width:timelineWidth, position:"relative", display:"flex", alignItems:"center"}}>
                                       {weeks.map((_,i) => i%2===0 && (
-                                        <div key={i} style={{position:"absolute", top:0, bottom:0, left:i*MIN_WEEK_W, width:MIN_WEEK_W, background:"rgba(255,255,255,0.01)"}} />
+                                        <div key={i} style={{position:"absolute", top:0, bottom:0, left:i*MIN_WEEK_W, width:MIN_WEEK_W, background:"var(--row-alt)"}} />
                                       ))}
                                       {todayLeft!==null && (
                                         <div style={{position:"absolute", top:0, bottom:0, left:todayLeft, width:1, background:"rgba(239,68,68,0.5)", zIndex:2}} />
@@ -566,7 +618,7 @@ function App() {
                     </div>
 
                   </div>
-                  {todayLeft!==null && <div style={{fontSize:10, color:"#4B5563", marginTop:5}}>— Red line = today</div>}
+                  {todayLeft!==null && <div style={{fontSize:10, color:"var(--text-dimmer)", marginTop:5}}>— Red line = today</div>}
                 </div>
               )}
 
@@ -576,12 +628,12 @@ function App() {
                   <div style={S.sectionBox}>
 
                     {/* Sticky week header */}
-                    <div style={{display:"flex", borderBottom:"1px solid #1F2937", background:"#0F172A", position:"sticky", top:0, zIndex:10}}>
-                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"#374151", borderRight:"1px solid #1F2937", position:"relative", zIndex:11, background:"#0F172A"}}>Resource</div>
+                    <div style={{display:"flex", borderBottom:"1px solid var(--border)", background:"var(--surface-2)", position:"sticky", top:0, zIndex:10}}>
+                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>Resource</div>
                       <div style={{flex:1, overflow:"clip"}}>
                         <div ref={heatHeaderRef} style={{display:"flex"}}>
                           {weeks.map((w,i) => (
-                            <div key={i} style={{width:MIN_WEEK_W, flexShrink:0, padding:"7px 3px", fontSize:9, color:"#4B5563", textAlign:"center", borderRight:i<weeks.length-1?"1px solid #1F2937":"", fontWeight:600}}>
+                            <div key={i} style={{width:MIN_WEEK_W, flexShrink:0, padding:"7px 3px", fontSize:9, color:"var(--text-dimmer)", textAlign:"center", borderRight:i<weeks.length-1?"1px solid var(--border)":"", fontWeight:600}}>
                               {fmtShort(w)}
                             </div>
                           ))}
@@ -593,8 +645,8 @@ function App() {
                     <div ref={heatScrollRef} style={{overflowX:"auto"}} onScroll={handleHeatScroll}>
                       <div style={{minWidth:148 + timelineWidth}}>
                         {heatmap.filter(h=>tasks.some(t=>t.resourceIds.includes(h.res.id))).filter(h => !filterResource || h.res.id === filterResource).map(({res,cols}) => (
-                          <div key={res.id} style={{display:"flex", borderTop:"1px solid #1F2937"}}>
-                            <div style={{width:148, flexShrink:0, padding:"10px", fontSize:12, fontWeight:600, color:"#D1D5DB", borderRight:"1px solid #1F2937", display:"flex", alignItems:"center", position:"sticky", left:0, background:"#111827", zIndex:1}}>{res.name}</div>
+                          <div key={res.id} style={{display:"flex", borderTop:"1px solid var(--border)"}}>
+                            <div style={{width:148, flexShrink:0, padding:"10px", fontSize:12, fontWeight:600, color:"var(--text-heatmap-res)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", position:"sticky", left:0, background:"var(--surface)", zIndex:1}}>{res.name}</div>
                             {cols.map((cellTasks,i) => {
                               const totalN = cellTasks.length;
                               const projectTasks = filterProject ? cellTasks.filter(t=>t.projectName===filterProject) : cellTasks;
@@ -613,7 +665,7 @@ function App() {
                               return (
                                 <div key={i}
                                   title={tooltipText()}
-                                  style={{width:MIN_WEEK_W, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background:heatBg(totalN), borderRight:i<weeks.length-1?"1px solid rgba(255,255,255,0.04)":"", minHeight:34, cursor:totalN>0?"pointer":"default"}}
+                                  style={{width:MIN_WEEK_W, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background:heatBg(totalN), borderRight:i<weeks.length-1?"1px solid var(--border-subtle)":"", minHeight:34, cursor:totalN>0?"pointer":"default"}}
                                 >
                                   {totalN>0 && (
                                     <span style={{fontSize:11, fontWeight:800, color:heatFg(totalN), letterSpacing:"-0.5px"}}>
@@ -630,11 +682,11 @@ function App() {
 
                   </div>
                   <div style={{display:"flex", gap:10, marginTop:8, alignItems:"center", flexWrap:"wrap"}}>
-                    <span style={{fontSize:10, color:"#4B5563"}}>Parallel tasks:</span>
+                    <span style={{fontSize:10, color:"var(--text-dimmer)"}}>Parallel tasks:</span>
                     {[0,1,2,3,4].map(n => (
                       <div key={n} style={{display:"flex", alignItems:"center", gap:4}}>
-                        <div style={{width:18, height:18, borderRadius:3, background:heatBg(n), border:"1px solid #1F2937"}} />
-                        <span style={{fontSize:10, color:"#6B7280"}}>{n===4?"4+":n}</span>
+                        <div style={{width:18, height:18, borderRadius:3, background:heatBg(n), border:"1px solid var(--border)"}} />
+                        <span style={{fontSize:10, color:"var(--text-dim)"}}>{n===4?"4+":n}</span>
                       </div>
                     ))}
                   </div>
