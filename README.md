@@ -26,6 +26,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Multi-resource tasks** | Assign a task to multiple people — load propagates to each resource in both views |
 | **Milestone markers** | Vertical overlays on the Gantt with custom label and colour — go-live dates, UAT freezes, deployment windows |
 | **Task notes** | Optional free-text notes per task, visible on hover, with a subtle dot indicator on the bar |
+| **Light / Dark theme** | Toggle between themes, preference saved in localStorage |
 | **Export / Import JSON** | Full data portability — sync between devices or share snapshots with your team |
 | **Print / PDF export** | Browser print dialog, landscape layout, sidebar hidden, colours preserved |
 | **Synchronized horizontal scroll** | Both views scroll in sync when tasks span many weeks; resource column stays fixed |
@@ -70,7 +71,6 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 
 🚧 **Work in progress** — actively developed.
 
-- [ ] Light / dark theme toggle
 - [ ] Completion percentage per task
 - [ ] Drag & drop to reschedule tasks
 - [ ] Print layout optimisation for large datasets
