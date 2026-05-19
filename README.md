@@ -28,10 +28,14 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Multi-resource tasks** | Assign a task to multiple people — load propagates to each resource in both views |
 | **Milestone markers** | Vertical overlays on the Gantt with custom label and colour — go-live dates, UAT freezes, deployment windows |
 | **Task notes** | Optional free-text notes per task, visible on hover, with a subtle dot indicator on the bar |
+| **Completion %** | Optional progress field per task — thin strip below the Gantt bar, high-contrast colour |
+| **Drag & drop rescheduling** | Drag bars left/right to shift task dates; click without moving still opens edit |
 | **Light / Dark theme** | Toggle between themes, preference saved in localStorage |
 | **Export / Import JSON** | Full data portability — sync between devices or share snapshots with your team |
 | **Print / PDF export** | Browser print dialog, landscape layout, sidebar hidden, colours preserved |
 | **Synchronized horizontal scroll** | Both views scroll in sync when tasks span many weeks; resource column stays fixed |
+| **Keyboard shortcuts** | Enter to submit task form, Esc to cancel |
+| **Sample data** | One-click load of a realistic 18-week scenario — instant onboarding |
 
 ---
 
@@ -44,7 +48,7 @@ cd gantt-heatmap
 
 Open `pm-workload-board.html` in your browser — no server needed, works offline after first load.
 
-**To try it immediately**: click **Import** and select `sample-data.json` — a realistic 18-week scenario across 3 resources, 5 projects, and 3 milestones loads instantly.
+**To try it immediately**: click **Load sample data** in the empty state — a realistic 18-week scenario across 3 resources, 5 projects, and 3 milestones loads instantly. No file needed.
 
 ---
 
@@ -77,6 +81,8 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 
 - [x] Resources section: collapsible + chip display
 - [x] Milestones section: collapsible
+- [x] Tasks section: collapsible
+- [x] Collapsible headers: full-row hover + larger chevron (∨/›)
 - [x] Sidebar toggle button (☰ in header)
 - [x] Undo toast for accidental task / resource / milestone deletions (5 s window)
 - [x] Task list sorted by start date
@@ -84,16 +90,18 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Import validation — structural check before accepting a JSON file
 - [x] Persistent sidebar section state — collapsed/expanded remembered across reloads
 - [x] Favicon — inline SVG emoji, no extra files needed
+- [x] Drag & drop rescheduling — drag bars to shift dates, click still opens edit form
+- [x] Completion % — optional field, strip below bar, high-contrast colour per theme
+- [x] Gantt bar tooltip — enriched with duration and completion %
+- [x] Sample data button — inline in empty state, confirmation dialog if data exists
+- [x] Keyboard shortcuts — Enter to submit, Esc to cancel
 
 ### Backlog
 
 | Priority | Item |
 |---|---|
-| High | Completion percentage per task — partial fill bar + % field |
-| High | Drag & drop to reschedule — drag bars to shift dates |
+| Medium | Read-only share link — encode board as URL fragment, open in view-only mode |
 | Medium | ISO week numbers in timeline header (W19, W20…) |
-| Medium | "Load sample data" button in empty state — zero-friction onboarding |
-| Medium | Keyboard shortcuts — Esc to cancel form, Enter to confirm |
 | Medium | Print layout optimisation for large datasets — auto-scale or date range selector |
 
 ---
