@@ -184,6 +184,7 @@ function App() {
   const [minVisibleWeeks, setMinVisibleWeeks] = React.useState(8);
   const [resOpen, setResOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-resOpen") === "1"; } catch { return false; } });
   const [msOpen, setMsOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-msOpen") === "1"; } catch { return false; } });
+  const [tasksOpen, setTasksOpen] = React.useState(() => { try { const v = localStorage.getItem("pm-gantt-tasksOpen"); return v === null ? true : v === "1"; } catch { return true; } });
   const [undoSnapshot, setUndoSnapshot] = React.useState(null);
   const mainRef = React.useRef(null);
   const undoTimerRef = React.useRef(null);
@@ -619,11 +620,11 @@ function App() {
               )}
             </div>
 
-            {/* TASKS LIST — sorted by start date */}
+            {/* TASKS LIST — sorted by start date, collapsible */}
             {tasks.length > 0 && (
-              <div style={{flex:1, overflowY:"auto"}}>
-                <div style={{...S.label, marginBottom:8}}>TASKS ({tasks.length})</div>
-                {sortedTasks.map(t => {
+              <div style={{flex:1, overflowY:"auto", minHeight:0}}>
+                <ColHdr label="TASKS" count={tasks.length} open={tasksOpen} onToggle={() => setTasksOpen(o=>{ const n=!o; try{localStorage.setItem("pm-gantt-tasksOpen",n?"1":"0");}catch{} return n; })} />
+                {tasksOpen && <div style={{marginTop:8}}>{sortedTasks.map(t => {
                   const resNames = (t.resourceIds||[]).map(id=>resources.find(r=>r.id===id)?.name).filter(Boolean).join(", ");
                   const col = pColors[t.projectName]||"#3B82F6";
                   return (
@@ -637,7 +638,7 @@ function App() {
                       </div>
                     </div>
                   );
-                })}
+                })}</div>}
               </div>
             )}
           </aside>
