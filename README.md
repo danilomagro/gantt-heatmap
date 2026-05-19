@@ -2,6 +2,8 @@
 
 > *"If the team looks slow, show them the bars. If they still don't believe you, show them the heatmap."*
 
+**[→ Open live version](https://danilomagro.github.io/gantt-heatmap/pm-workload-board.html)**
+
 A single-file **cross-project Gantt and capacity heatmap tool** for project managers handling multiple simultaneous implementations. No backend, no dependencies to install, no build step. Just open `pm-workload-board.html`.
 
 ![PM Workload Board preview](preview.png)
@@ -71,9 +73,27 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 
 🚧 **Work in progress** — actively developed.
 
-- [ ] Completion percentage per task
-- [ ] Drag & drop to reschedule tasks
-- [ ] Print layout optimisation for large datasets
+### Recently shipped
+
+- [x] Resources section: collapsible + chip display
+- [x] Milestones section: collapsible
+- [x] Sidebar toggle button (☰ in header)
+- [x] Undo toast for accidental task / resource / milestone deletions (5 s window)
+- [x] Task list sorted by start date
+- [x] Date validation — end date must be ≥ start date
+- [x] Import validation — structural check before accepting a JSON file
+
+### Backlog
+
+| Priority | Item |
+|---|---|
+| High | Completion percentage per task — partial fill bar + % field |
+| High | Drag & drop to reschedule — drag bars to shift dates |
+| Medium | ISO week numbers in timeline header (W19, W20…) |
+| Medium | "Load sample data" button in empty state — zero-friction onboarding |
+| Medium | Keyboard shortcuts — Esc to cancel form, Enter to confirm |
+| Medium | Print layout optimisation for large datasets — auto-scale or date range selector |
+| Low | Persistent sidebar section state — remember collapsed/expanded across reloads |
 
 ---
 
