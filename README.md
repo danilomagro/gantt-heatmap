@@ -23,6 +23,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | | |
 |---|---|
 | **Cross-project Gantt** | Timeline grouped by resource, bars coloured by project, red line = today, click bar to edit |
+| **Day / Week / Month zoom** | Switch timeline granularity — day view shows weekends dimmed, week view shows ISO week numbers (W19…), month view gives a bird's-eye overview |
 | **Capacity Heatmap** | Derived automatically from Gantt — resource × week grid, blue → amber → red by parallel task count |
 | **Resource & Project filters** | Focus either view on one person or one project — filters compose, heatmap always shows real total load |
 | **Multi-resource tasks** | Assign a task to multiple people — load propagates to each resource in both views |
@@ -95,13 +96,13 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Day / Week / Month granularity toggle — switch timeline zoom; ISO week numbers (W19, W20…) in week view; weekend columns dimmed in day view; preference saved in localStorage
 
 ### Backlog
 
 | Priority | Item |
 |---|---|
 | Medium | Read-only share link — encode board as URL fragment, open in view-only mode |
-| Medium | ISO week numbers in timeline header (W19, W20…) |
 | Medium | Print layout optimisation for large datasets — auto-scale or date range selector |
 
 ---

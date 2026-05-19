@@ -45,6 +45,7 @@
     --heat-fg-2:        #FDE68A;
     --heat-fg-3:        #FCA5A5;
     --row-alt:          rgba(255,255,255,0.01);
+    --weekend-bg:       rgba(255,255,255,0.035);
     --progress-fill:    rgba(255,255,255,0.88);
     --progress-track:   rgba(255,255,255,0.18);
     color-scheme: dark;
@@ -77,6 +78,7 @@
     --heat-fg-2:        #78350F;
     --heat-fg-3:        #9A3412;
     --row-alt:          rgba(0,0,0,0.02);
+    --weekend-bg:       rgba(0,0,0,0.04);
     --progress-fill:    rgba(0,0,0,0.65);
     --progress-track:   rgba(0,0,0,0.15);
     color-scheme: light;
@@ -144,7 +146,12 @@ const MILESTONE_COLORS = ["#F59E0B","#EF4444","#06D6A0","#3A86FF","#A78BFA"];
 const SAMPLE_DATA = {"t":[{"id":"1700001001000","taskName":"Backend integration","projectName":"ERP Migration","resourceIds":["1700000001000","1700000003000"],"startDate":"2026-04-20","endDate":"2026-05-08","notes":"Blocked by missing DB credentials from client IT — follow up Thursday"},{"id":"1700001005000","taskName":"Frontend integration","projectName":"ERP Migration","resourceIds":["1700000002000"],"startDate":"2026-04-27","endDate":"2026-06-12","notes":"Coordinate with John — depends on backend endpoints being ready by 09 May"},{"id":"1700001008000","taskName":"ETL pipelines","projectName":"Data Warehouse","resourceIds":["1700000003000"],"startDate":"2026-05-11","endDate":"2026-06-26","notes":"Waiting for data modeling sign-off before starting. Source system access TBC."},{"id":"1700001011000","taskName":"QA & regression testing","projectName":"Customer Portal","resourceIds":["1700000002000"],"startDate":"2026-05-18","endDate":"2026-06-19","notes":"Test plan ready. Needs staging environment — chasing Marco for deployment."},{"id":"1700001013000","taskName":"Performance optimisation","projectName":"API Gateway","resourceIds":["1700000001000"],"startDate":"2026-06-15","endDate":"2026-07-10","notes":"Target p99 latency < 80ms. Profile with k6 first, then tune connection pooling."},{"id":"1700001014000","taskName":"Mobile screen implementation","projectName":"Mobile App Redesign","resourceIds":["1700000002000"],"startDate":"2026-06-08","endDate":"2026-08-07","notes":"React Native build. Polish pass and handoff QA to follow before release."},{"id":"1700001015000","taskName":"Dashboards & reporting","projectName":"Data Warehouse","resourceIds":["1700000003000","1700000001000"],"startDate":"2026-07-06","endDate":"2026-08-07","notes":"BI layer on top of ETL output. Stakeholder review scheduled mid-July."}],"r":[{"id":"1700000001000","name":"John"},{"id":"1700000002000","name":"Sarah"},{"id":"1700000003000","name":"Marco"}],"m":[{"id":"1700002001000","name":"ERP Go-Live","date":"2026-05-11","color":"#F59E0B"},{"id":"1700002002000","name":"UAT Freeze","date":"2026-06-15","color":"#3A86FF"},{"id":"1700002003000","name":"Mobile Release","date":"2026-08-10","color":"#A78BFA"}],"c":{"ERP Migration":"#E84855","API Gateway":"#3A86FF","Data Warehouse":"#06D6A0","Customer Portal":"#FFB703","Mobile App Redesign":"#8338EC"}};
 const STORAGE_KEY = "pm-gantt-v2";
 const THEME_KEY   = "pm-gantt-theme";
-const MIN_WEEK_W  = 80;
+const GRAN_KEY    = "pm-gantt-gran";
+
+// px per calendar day for each granularity
+const DAY_PX   = 38;           // day view:   38 px / day
+const WEEK_PX  = 80 / 7;       // week view:  80 px / week  → ~11.43 px/day
+const MONTH_PX = 120 / 30.44;  // month view: ~120 px / avg-month → ~3.94 px/day
 
 function parseDate(s) { return new Date(s + "T00:00:00"); }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
@@ -155,6 +162,12 @@ function startOfMonday(d) {
 }
 function fmtShort(d) { return d.toLocaleDateString("en-GB", { day:"2-digit", month:"short" }); }
 function fmtDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function getISOWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t - y) / 86400000 + 1) / 7);
+}
 const heatBg = n => `var(--heat-${Math.min(n, 4)})`;
 const heatFg = n => n===1?"var(--heat-fg-1)": n===2?"var(--heat-fg-2)":"var(--heat-fg-3)";
 
@@ -178,6 +191,10 @@ function App() {
   const [theme, setTheme] = React.useState(() => {
     try { return localStorage.getItem(THEME_KEY) || "dark"; } catch { return "dark"; }
   });
+  const [granularity, setGranularity] = React.useState(() => {
+    try { return localStorage.getItem(GRAN_KEY) || "week"; } catch { return "week"; }
+  });
+  const [mainWidth, setMainWidth] = React.useState(800);
   const [view, setView] = React.useState("both");
   const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"", completion:"" });
   const [mForm, setMForm] = React.useState({ name:"", date:"", color:"#F59E0B" });
@@ -185,30 +202,43 @@ function App() {
   const [sideOpen, setSideOpen] = React.useState(true);
   const [filterResource, setFilterResource] = React.useState("");
   const [filterProject, setFilterProject] = React.useState("");
-  const [minVisibleWeeks, setMinVisibleWeeks] = React.useState(8);
   const [resOpen, setResOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-resOpen") === "1"; } catch { return false; } });
   const [msOpen, setMsOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-msOpen") === "1"; } catch { return false; } });
   const [tasksOpen, setTasksOpen] = React.useState(() => { try { const v = localStorage.getItem("pm-gantt-tasksOpen"); return v === null ? true : v === "1"; } catch { return true; } });
   const [undoSnapshot, setUndoSnapshot] = React.useState(null);
-  const mainRef = React.useRef(null);
-  const undoTimerRef = React.useRef(null);
-  const dragRef = React.useRef(null);
-  const lastDragMovedRef = React.useRef(false);
 
-  // Scroll sync refs
+  const mainRef        = React.useRef(null);
+  const undoTimerRef   = React.useRef(null);
+  const dragRef        = React.useRef(null);
+  const lastDragMovedRef = React.useRef(false);
   const ganttScrollRef = React.useRef(null);
   const ganttHeaderRef = React.useRef(null);
   const heatScrollRef  = React.useRef(null);
   const heatHeaderRef  = React.useRef(null);
   const isSyncing      = React.useRef(false);
 
+  // ── pixels per calendar day (drives ALL positioning) ──────────────────────
+  const dayW = granularity === 'day'   ? DAY_PX
+             : granularity === 'week'  ? WEEK_PX
+             :                           MONTH_PX;
+
+  // Keep current dayW accessible inside the drag handler's stale closure
+  const dayWRef = React.useRef(dayW);
+  React.useEffect(() => { dayWRef.current = dayW; }, [dayW]);
+
+  // ── theme ─────────────────────────────────────────────────────────────────
   React.useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     try { localStorage.setItem(THEME_KEY, theme); } catch {}
   }, [theme]);
-
   const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
+  const changeGranularity = (g) => {
+    setGranularity(g);
+    try { localStorage.setItem(GRAN_KEY, g); } catch {}
+  };
+
+  // ── scroll sync ───────────────────────────────────────────────────────────
   const handleGanttScroll = React.useCallback(e => {
     const sl = e.currentTarget.scrollLeft;
     if (ganttHeaderRef.current) ganttHeaderRef.current.style.transform = `translateX(-${sl}px)`;
@@ -231,6 +261,7 @@ function App() {
     }
   }, []);
 
+  // ── storage ───────────────────────────────────────────────────────────────
   React.useEffect(() => {
     const r = storage.get(STORAGE_KEY);
     if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); } catch {} }
@@ -238,12 +269,12 @@ function App() {
 
   const persist = (t, r, c, m) => storage.set(STORAGE_KEY, JSON.stringify({ t, r, c, m }));
 
+  // ── undo ──────────────────────────────────────────────────────────────────
   const saveUndo = (label, t, r, c, m) => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     setUndoSnapshot({ label, t, r, c, m });
     undoTimerRef.current = setTimeout(() => setUndoSnapshot(null), 5000);
   };
-
   const performUndo = () => {
     if (!undoSnapshot) return;
     const { t, r, c, m } = undoSnapshot;
@@ -253,29 +284,79 @@ function App() {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
   };
 
+  // ── weeks: always Monday-based (used for heatmap + timelineStart) ─────────
   const weeks = React.useMemo(() => {
+    const minW = Math.max(8, Math.ceil((mainWidth - 148) / (dayW * 7)));
     const ws = [];
     if (!tasks.length) {
       let cur = startOfMonday(new Date());
-      for (let i=0; i<minVisibleWeeks; i++) { ws.push(new Date(cur)); cur = addDays(cur,7); }
+      for (let i=0; i<minW; i++) { ws.push(new Date(cur)); cur = addDays(cur,7); }
       return ws;
     }
     const dates = tasks.flatMap(t => [parseDate(t.startDate), parseDate(t.endDate)]);
     let cur = startOfMonday(new Date(Math.min(...dates)));
     const end = new Date(Math.max(...dates));
     while (cur <= end) { ws.push(new Date(cur)); cur = addDays(cur,7); }
-    while (ws.length < minVisibleWeeks) ws.push(addDays(ws[ws.length-1],7));
+    while (ws.length < minW) ws.push(addDays(ws[ws.length-1],7));
     return ws;
-  }, [tasks, minVisibleWeeks]);
+  }, [tasks, mainWidth, dayW]);
 
   const timelineStart = weeks[0];
-  const timelineWidth = weeks.length * MIN_WEEK_W;
-  const dayW = MIN_WEEK_W / 7;
+  const heatColW      = dayW * 7;            // heatmap column = 1 week in px
+  const heatTimelineW = weeks.length * heatColW;
 
+  // ── Gantt columns (granularity-specific) ──────────────────────────────────
+  const ganttColumns = React.useMemo(() => {
+    if (!weeks.length) return [];
+    const tlEnd = addDays(weeks[weeks.length - 1], 7); // exclusive boundary
+
+    if (granularity === 'day') {
+      const cols = []; let d = new Date(timelineStart);
+      while (d < tlEnd) { cols.push(new Date(d)); d = addDays(d, 1); }
+      return cols;
+    }
+    if (granularity === 'week') {
+      return weeks.map(w => new Date(w));
+    }
+    // month: start from 1st of month that contains timelineStart
+    const cols = [];
+    let d = new Date(timelineStart.getFullYear(), timelineStart.getMonth(), 1);
+    while (d < tlEnd) { cols.push(new Date(d)); d = new Date(d.getFullYear(), d.getMonth()+1, 1); }
+    return cols;
+  }, [weeks, granularity, timelineStart]);
+
+  // Each Gantt column gets {date, left, width} in pixels
+  const ganttColPositions = React.useMemo(() => {
+    return ganttColumns.map(col => {
+      const left = (col - timelineStart) / 86400000 * dayW;
+      let width;
+      if (granularity === 'day') {
+        width = dayW;
+      } else if (granularity === 'week') {
+        width = dayW * 7;
+      } else {
+        // calendar month: variable width
+        const next = new Date(col.getFullYear(), col.getMonth() + 1, 1);
+        width = (next - col) / 86400000 * dayW;
+      }
+      return { date: col, left, width };
+    });
+  }, [ganttColumns, timelineStart, dayW, granularity]);
+
+  const ganttTimelineW = React.useMemo(() => {
+    if (!ganttColPositions.length) return 0;
+    const last = ganttColPositions[ganttColPositions.length - 1];
+    return last.left + last.width;
+  }, [ganttColPositions]);
+
+  // Both scroll areas share the same total px width so scroll-sync works
+  const sharedTimelineW = Math.max(ganttTimelineW, heatTimelineW);
+
+  // ── bar geometry ──────────────────────────────────────────────────────────
   const barStyle = task => {
     const s = parseDate(task.startDate);
     const e = addDays(parseDate(task.endDate), 1);
-    const left = Math.max(0, (s - timelineStart) / 86400000 * dayW);
+    const left  = Math.max(0, (s - timelineStart) / 86400000 * dayW);
     const width = Math.max(dayW * 0.5, (e - s) / 86400000 * dayW);
     return { left:`${left}px`, width:`${width}px` };
   };
@@ -283,9 +364,10 @@ function App() {
   const todayLeft = React.useMemo(() => {
     const today = new Date(); today.setHours(0,0,0,0);
     const px = (today - timelineStart) / 86400000 * dayW;
-    return (px >= 0 && px <= timelineWidth) ? px : null;
-  }, [weeks]);
+    return (px >= 0 && px <= sharedTimelineW) ? px : null;
+  }, [weeks, dayW, sharedTimelineW]);
 
+  // ── heatmap data (always weekly) ──────────────────────────────────────────
   const heatmap = React.useMemo(() => resources.map(res => ({
     res,
     cols: weeks.map(ws => {
@@ -294,6 +376,7 @@ function App() {
     })
   })), [resources, tasks, weeks]);
 
+  // ── data mutations ────────────────────────────────────────────────────────
   const assignColor = (projectName, current) => {
     if (current[projectName]) return current;
     const used = Object.values(current);
@@ -347,19 +430,21 @@ function App() {
     persist(SAMPLE_DATA.t, SAMPLE_DATA.r, SAMPLE_DATA.c, SAMPLE_DATA.m);
   };
 
+  // ── keyboard shortcuts ────────────────────────────────────────────────────
   React.useEffect(() => {
     const handler = e => { if (e.key === "Escape") cancelForm(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  // ── drag & drop ───────────────────────────────────────────────────────────
   React.useEffect(() => {
     const onMove = e => {
       if (!dragRef.current) return;
       const { startX, el } = dragRef.current;
-      const deltaDays = Math.round((e.clientX - startX) / (MIN_WEEK_W / 7));
+      const deltaDays = Math.round((e.clientX - startX) / dayWRef.current);
       dragRef.current.deltaDays = deltaDays;
-      if (el) el.style.transform = `translateX(${deltaDays * (MIN_WEEK_W / 7)}px)`;
+      if (el) el.style.transform = `translateX(${deltaDays * dayWRef.current}px)`;
     };
     const onUp = () => {
       if (!dragRef.current) return;
@@ -384,6 +469,7 @@ function App() {
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
   }, []);
 
+  // ── milestones ────────────────────────────────────────────────────────────
   const addMilestone = () => {
     if (!mForm.name.trim() || !mForm.date) return;
     const m = [...milestones, { id: Date.now().toString(), name: mForm.name.trim(), date: mForm.date, color: mForm.color }];
@@ -397,6 +483,7 @@ function App() {
     setMilestones(m); persist(tasks, resources, pColors, m);
   };
 
+  // ── import / export ───────────────────────────────────────────────────────
   const exportJSON = () => {
     const blob = new Blob([JSON.stringify({t:tasks,r:resources,c:pColors,m:milestones},null,2)], {type:"application/json"});
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
@@ -418,33 +505,28 @@ function App() {
     e.target.value = "";
   };
 
+  // ── resize observer → keeps mainWidth current ─────────────────────────────
   React.useLayoutEffect(() => {
     if (!mainRef.current) return;
-    const update = () => {
-      const w = mainRef.current.clientWidth;
-      setMinVisibleWeeks(Math.max(8, Math.ceil((w - 148) / MIN_WEEK_W)));
-    };
+    const update = () => setMainWidth(mainRef.current.clientWidth);
     update();
     const ro = new ResizeObserver(update);
     ro.observe(mainRef.current);
     return () => ro.disconnect();
   }, []);
 
+  // ── filter cleanup ────────────────────────────────────────────────────────
   React.useEffect(() => {
-    if (filterResource && !resources.find(r => r.id === filterResource)) {
-      setFilterResource("");
-    }
+    if (filterResource && !resources.find(r => r.id === filterResource)) setFilterResource("");
   }, [resources]);
-
   React.useEffect(() => {
-    if (filterProject && !tasks.some(t => t.projectName === filterProject)) {
-      setFilterProject("");
-    }
+    if (filterProject && !tasks.some(t => t.projectName === filterProject)) setFilterProject("");
   }, [tasks]);
 
-  const projects = [...new Set(tasks.map(t => t.projectName))];
+  const projects    = [...new Set(tasks.map(t => t.projectName))];
   const sortedTasks = [...tasks].sort((a, b) => a.startDate.localeCompare(b.startDate));
 
+  // ── styles ────────────────────────────────────────────────────────────────
   const S = {
     app:          { fontFamily:"'Segoe UI',system-ui,sans-serif", background:"var(--bg)", minHeight:"100vh", display:"flex", flexDirection:"column", color:"var(--text)" },
     header:       { background:"var(--surface)", borderBottom:"1px solid var(--border)", padding:"10px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap" },
@@ -462,14 +544,56 @@ function App() {
   const ColHdr = ({ label, count, open, onToggle }) => {
     const [hov, setHov] = React.useState(false);
     return (
-      <div style={{...S.colHdr, padding:"4px 6px", margin:"0 -6px", borderRadius:5, background: hov ? "var(--surface-3)" : "transparent", transition:"background 0.12s"}}
+      <div style={{...S.colHdr, padding:"4px 6px", margin:"0 -6px", borderRadius:5,
+                   background: hov ? "var(--surface-3)" : "transparent", transition:"background 0.12s"}}
         onClick={onToggle} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
         <span style={S.label}>{label}{count > 0 ? ` (${count})` : ""}</span>
-        <span style={{fontSize:15, color:"var(--text-dim)", marginLeft:6, flexShrink:0, lineHeight:1}}>{open ? "∨" : "›"}</span>
+        <span style={{fontSize:15, color:"var(--text-dim)", marginLeft:6, flexShrink:0, lineHeight:1}}>
+          {open ? "∨" : "›"}
+        </span>
       </div>
     );
   };
 
+  // ── Gantt column header label ─────────────────────────────────────────────
+  const ganttColLabel = (col) => {
+    const d = col.date;
+    if (granularity === 'day') {
+      return (
+        <>
+          {d.getDate()}
+          <br/>
+          <span style={{fontWeight:400, opacity:0.65}}>
+            {d.toLocaleDateString("en-GB", {weekday:"narrow"})}
+          </span>
+        </>
+      );
+    }
+    if (granularity === 'week') {
+      return (
+        <>
+          <span style={{fontWeight:800}}>W{getISOWeek(d)}</span>
+          <br/>
+          <span style={{fontWeight:400, opacity:0.8}}>{fmtShort(d)}</span>
+        </>
+      );
+    }
+    // month
+    return d.toLocaleDateString("en-GB", {month:"short"}) + " '" + String(d.getFullYear()).slice(2);
+  };
+
+  // heatmap column label (always weekly, but label adapts to granularity)
+  const heatColLabel = (w) => {
+    if (heatColW >= 50) {
+      return granularity === 'week'
+        ? `W${getISOWeek(w)}  ${fmtShort(w)}`
+        : fmtShort(w);
+    }
+    if (heatColW >= 28) return `W${getISOWeek(w)}`;
+    return ""; // too narrow (month view)
+  };
+
+  // ── render ────────────────────────────────────────────────────────────────
   return (
     <div style={S.app}>
       <header style={S.header}>
@@ -478,9 +602,17 @@ function App() {
           <span style={{fontFamily:"monospace", fontSize:11, color:"var(--text-faint)"}}>{tasks.length} tasks · {resources.length} resources</span>
         </div>
         <div style={{display:"flex", gap:6, flexWrap:"wrap", alignItems:"center"}}>
+          {/* View toggle */}
           {["gantt","heatmap","both"].map(v => (
             <button key={v} style={S.btn(view===v)} onClick={() => setView(v)}>
               {v==="both"?"Both":v.charAt(0).toUpperCase()+v.slice(1)}
+            </button>
+          ))}
+          <div style={{width:1, height:18, background:"var(--border)", margin:"0 4px"}} />
+          {/* Granularity toggle */}
+          {["day","week","month"].map(g => (
+            <button key={g} style={S.btn(granularity===g)} onClick={() => changeGranularity(g)}>
+              {g.charAt(0).toUpperCase()+g.slice(1)}
             </button>
           ))}
           <div style={{width:1, height:18, background:"var(--border)", margin:"0 4px"}} />
@@ -668,42 +800,65 @@ function App() {
           ) : (
             <div style={{display:"flex", flexDirection:"column", gap:24}}>
 
+              {/* ── GANTT ────────────────────────────────────────────────── */}
               {(view==="gantt"||view==="both") && (
                 <div>
                   <div style={S.sectionTitle}>GANTT — IMPLEMENTATION TIMELINE</div>
                   <div style={S.sectionBox}>
 
-                    {/* Sticky week header */}
+                    {/* Sticky column header */}
                     <div style={{display:"flex", borderBottom:"1px solid var(--border)", background:"var(--surface-2)", position:"sticky", top:0, zIndex:10}}>
                       <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>Resource / Task</div>
                       <div style={{flex:1, overflow:"clip"}}>
                         <div ref={ganttHeaderRef} style={{display:"flex"}}>
-                          {weeks.map((w,i) => (
-                            <div key={i} style={{width:MIN_WEEK_W, flexShrink:0, padding:"7px 3px", fontSize:9, color:"var(--text-dimmer)", textAlign:"center", borderRight:i<weeks.length-1?"1px solid var(--border)":"", background:i%2===0?"var(--row-alt)":"transparent", fontWeight:600, letterSpacing:"0.02em"}}>
-                              {fmtShort(w)}
-                            </div>
-                          ))}
+                          {ganttColPositions.map((col, i) => {
+                            const d = col.date;
+                            const isWeekend = granularity === 'day' && (d.getDay() === 0 || d.getDay() === 6);
+                            return (
+                              <div key={i} style={{
+                                width: col.width,
+                                flexShrink: 0,
+                                padding: granularity === 'day' ? "4px 2px" : "5px 3px",
+                                fontSize: granularity === 'day' ? 8 : 9,
+                                color: isWeekend ? "var(--text-faint)" : "var(--text-dimmer)",
+                                textAlign: "center",
+                                lineHeight: 1.35,
+                                borderRight: i < ganttColPositions.length-1 ? "1px solid var(--border)" : "",
+                                background: isWeekend ? "var(--weekend-bg)" : i%2===0 ? "var(--row-alt)" : "transparent",
+                                fontWeight: 600,
+                                letterSpacing: "0.02em",
+                                overflow: "hidden",
+                              }}>
+                                {ganttColLabel(col)}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
 
                     {/* Horizontally scrollable body */}
                     <div ref={ganttScrollRef} style={{overflowX:"auto"}} onScroll={handleGanttScroll}>
-                      <div style={{minWidth:148 + timelineWidth, position:"relative"}}>
+                      <div style={{minWidth: 148 + sharedTimelineW, position:"relative"}}>
+
+                        {/* Milestone overlays */}
                         {milestones.map(m => {
                           const mLeft = (parseDate(m.date) - timelineStart) / 86400000 * dayW;
-                          if (mLeft < 0 || mLeft > timelineWidth) return null;
+                          if (mLeft < 0 || mLeft > sharedTimelineW) return null;
                           return (
-                            <div key={m.id} style={{position:"absolute", top:0, bottom:0, left:148 + mLeft, width:2, background:m.color, zIndex:4, pointerEvents:"none", opacity:0.9}}>
+                            <div key={m.id} style={{position:"absolute", top:0, bottom:0, left:148+mLeft, width:2, background:m.color, zIndex:4, pointerEvents:"none", opacity:0.9}}>
                               <div style={{position:"absolute", top:4, left:4, fontSize:9, color:m.color, fontWeight:700, whiteSpace:"nowrap", background:"var(--bg)", padding:"2px 5px", borderRadius:3, letterSpacing:"0.02em"}}>◆ {m.name}</div>
                             </div>
                           );
                         })}
+
+                        {/* Resource rows */}
                         {resources.filter(res => !filterResource || res.id === filterResource).map(res => {
                           const resTasks = tasks.filter(t=>t.resourceIds.includes(res.id) && (!filterProject || t.projectName===filterProject));
                           if (!resTasks.length) return null;
                           return (
                             <div key={res.id}>
+                              {/* Resource header row */}
                               <div style={{display:"flex", background:"var(--surface-3)", borderTop:"1px solid var(--border)"}}>
                                 <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:11, fontWeight:700, color:"var(--text-muted)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--surface-3)", zIndex:3}}>
                                   {res.name}
@@ -711,29 +866,41 @@ function App() {
                                     {resTasks.length}
                                   </span>
                                 </div>
-                                <div style={{width:timelineWidth}} />
+                                <div style={{width:sharedTimelineW}} />
                               </div>
+
+                              {/* Task rows */}
                               {resTasks.map(task => {
                                 const col = pColors[task.projectName]||"#3B82F6";
-                                const bs = barStyle(task);
+                                const bs  = barStyle(task);
                                 const pct = (task.completion != null && task.completion > 0) ? Math.min(100, task.completion) : 0;
                                 return (
                                   <div key={task.id} style={{display:"flex", borderTop:"1px solid var(--border-subtle)", minHeight:40}}>
+                                    {/* Fixed label column */}
                                     <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:10, color:"var(--text-dim)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--bg)", zIndex:3}}>
                                       <div style={{width:7, height:7, borderRadius:2, background:col, flexShrink:0}} />
                                       <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{task.taskName}</span>
                                     </div>
-                                    <div style={{width:timelineWidth, position:"relative", display:"flex", alignItems:"center"}}>
-                                      {weeks.map((_,i) => i%2===0 && (
-                                        <div key={i} style={{position:"absolute", top:0, bottom:0, left:i*MIN_WEEK_W, width:MIN_WEEK_W, background:"var(--row-alt)"}} />
-                                      ))}
+                                    {/* Timeline area */}
+                                    <div style={{width:sharedTimelineW, position:"relative", display:"flex", alignItems:"center"}}>
+                                      {/* Column stripes */}
+                                      {ganttColPositions.map((cp, i) => {
+                                        const isWE = granularity === 'day' && (cp.date.getDay() === 0 || cp.date.getDay() === 6);
+                                        return (isWE || i%2===0) ? (
+                                          <div key={i} style={{position:"absolute", top:0, bottom:0, left:cp.left, width:cp.width,
+                                            background: isWE ? "var(--weekend-bg)" : "var(--row-alt)"}} />
+                                        ) : null;
+                                      })}
+                                      {/* Today line */}
                                       {todayLeft!==null && (
                                         <div style={{position:"absolute", top:0, bottom:0, left:todayLeft, width:1, background:"rgba(239,68,68,0.5)", zIndex:2}} />
                                       )}
+                                      {/* Completion strip */}
                                       {pct > 0 && <>
                                         <div style={{position:"absolute", left:bs.left, width:bs.width, height:3, bottom:6, background:"var(--progress-track)", borderRadius:2, zIndex:2}} />
                                         <div style={{position:"absolute", left:bs.left, width:`${parseFloat(bs.width)*pct/100}px`, height:3, bottom:6, background:"var(--progress-fill)", borderRadius:2, zIndex:3}} />
                                       </>}
+                                      {/* Gantt bar */}
                                       <div
                                         onClick={() => { if (!lastDragMovedRef.current) editTask(task); lastDragMovedRef.current = false; }}
                                         onMouseDown={e => {
@@ -788,6 +955,7 @@ function App() {
                 </div>
               )}
 
+              {/* ── HEATMAP ──────────────────────────────────────────────── */}
               {(view==="heatmap"||view==="both") && (
                 <div>
                   <div style={S.sectionTitle}>HEATMAP — WEEKLY LOAD BY RESOURCE</div>
@@ -799,8 +967,19 @@ function App() {
                       <div style={{flex:1, overflow:"clip"}}>
                         <div ref={heatHeaderRef} style={{display:"flex"}}>
                           {weeks.map((w,i) => (
-                            <div key={i} style={{width:MIN_WEEK_W, flexShrink:0, padding:"7px 3px", fontSize:9, color:"var(--text-dimmer)", textAlign:"center", borderRight:i<weeks.length-1?"1px solid var(--border)":"", fontWeight:600}}>
-                              {fmtShort(w)}
+                            <div key={i} style={{
+                              width: heatColW,
+                              flexShrink: 0,
+                              padding: "7px 3px",
+                              fontSize: heatColW < 30 ? 7 : 9,
+                              color: "var(--text-dimmer)",
+                              textAlign: "center",
+                              borderRight: i<weeks.length-1 ? "1px solid var(--border)" : "",
+                              fontWeight: 600,
+                              overflow: "hidden",
+                              whiteSpace: "nowrap",
+                            }}>
+                              {heatColLabel(w)}
                             </div>
                           ))}
                         </div>
@@ -809,40 +988,53 @@ function App() {
 
                     {/* Horizontally scrollable body */}
                     <div ref={heatScrollRef} style={{overflowX:"auto"}} onScroll={handleHeatScroll}>
-                      <div style={{minWidth:148 + timelineWidth}}>
-                        {heatmap.filter(h=>tasks.some(t=>t.resourceIds.includes(h.res.id))).filter(h => !filterResource || h.res.id === filterResource).map(({res,cols}) => (
-                          <div key={res.id} style={{display:"flex", borderTop:"1px solid var(--border)"}}>
-                            <div style={{width:148, flexShrink:0, padding:"10px", fontSize:12, fontWeight:600, color:"var(--text-heatmap-res)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", position:"sticky", left:0, background:"var(--surface)", zIndex:1}}>{res.name}</div>
-                            {cols.map((cellTasks,i) => {
-                              const totalN = cellTasks.length;
-                              const projectTasks = filterProject ? cellTasks.filter(t=>t.projectName===filterProject) : cellTasks;
-                              const projectN = projectTasks.length;
-                              const tooltipText = () => {
-                                if (totalN === 0) return "";
-                                if (filterProject) {
-                                  const header = `${filterProject}: ${projectN} of ${totalN} task(s) this week`;
-                                  const projLines = projectTasks.length ? "\n" + projectTasks.map(t=>`• ${t.taskName}`).join("\n") : "";
-                                  const others = cellTasks.filter(t=>t.projectName!==filterProject);
-                                  const otherLines = others.length ? "\nOther projects:\n" + others.map(t=>`• ${t.taskName} (${t.projectName})`).join("\n") : "";
-                                  return header + projLines + otherLines;
-                                }
-                                return cellTasks.map(t=>`${t.taskName} (${t.projectName})`).join("\n");
-                              };
-                              return (
-                                <div key={i}
-                                  title={tooltipText()}
-                                  style={{width:MIN_WEEK_W, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background:heatBg(totalN), borderRight:i<weeks.length-1?"1px solid var(--border-subtle)":"", minHeight:34, cursor:totalN>0?"pointer":"default"}}
-                                >
-                                  {totalN>0 && (
-                                    <span style={{fontSize:11, fontWeight:800, color:heatFg(totalN), letterSpacing:"-0.5px"}}>
-                                      {filterProject ? `${projectN}/${totalN}` : totalN}
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
+                      <div style={{minWidth:148 + sharedTimelineW}}>
+                        {heatmap
+                          .filter(h=>tasks.some(t=>t.resourceIds.includes(h.res.id)))
+                          .filter(h => !filterResource || h.res.id === filterResource)
+                          .map(({res,cols}) => (
+                            <div key={res.id} style={{display:"flex", borderTop:"1px solid var(--border)"}}>
+                              <div style={{width:148, flexShrink:0, padding:"10px", fontSize:12, fontWeight:600, color:"var(--text-heatmap-res)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", position:"sticky", left:0, background:"var(--surface)", zIndex:1}}>{res.name}</div>
+                              {cols.map((cellTasks,i) => {
+                                const totalN   = cellTasks.length;
+                                const projectTasks = filterProject ? cellTasks.filter(t=>t.projectName===filterProject) : cellTasks;
+                                const projectN = projectTasks.length;
+                                const tooltipText = () => {
+                                  if (totalN === 0) return "";
+                                  if (filterProject) {
+                                    const header = `${filterProject}: ${projectN} of ${totalN} task(s) this week`;
+                                    const projLines = projectTasks.length ? "\n" + projectTasks.map(t=>`• ${t.taskName}`).join("\n") : "";
+                                    const others = cellTasks.filter(t=>t.projectName!==filterProject);
+                                    const otherLines = others.length ? "\nOther projects:\n" + others.map(t=>`• ${t.taskName} (${t.projectName})`).join("\n") : "";
+                                    return header + projLines + otherLines;
+                                  }
+                                  return cellTasks.map(t=>`${t.taskName} (${t.projectName})`).join("\n");
+                                };
+                                return (
+                                  <div key={i}
+                                    title={tooltipText()}
+                                    style={{
+                                      width: heatColW,
+                                      flexShrink: 0,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      background: heatBg(totalN),
+                                      borderRight: i<weeks.length-1 ? "1px solid var(--border-subtle)" : "",
+                                      minHeight: 34,
+                                      cursor: totalN>0 ? "pointer" : "default",
+                                    }}
+                                  >
+                                    {totalN>0 && heatColW >= 18 && (
+                                      <span style={{fontSize:Math.min(11, heatColW * 0.38), fontWeight:800, color:heatFg(totalN), letterSpacing:"-0.5px"}}>
+                                        {filterProject ? `${projectN}/${totalN}` : totalN}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ))}
                       </div>
                     </div>
 
