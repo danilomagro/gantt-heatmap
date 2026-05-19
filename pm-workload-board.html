@@ -137,6 +137,7 @@
 
 const COLORS = ["#E84855","#3A86FF","#06D6A0","#FFB703","#8338EC","#FF6B35","#4ECDC4","#A78BFA","#F472B6","#34D399"];
 const MILESTONE_COLORS = ["#F59E0B","#EF4444","#06D6A0","#3A86FF","#A78BFA"];
+const SAMPLE_DATA = {"t":[{"id":"1700001001000","taskName":"Backend integration","projectName":"ERP Migration","resourceIds":["1700000001000","1700000003000"],"startDate":"2026-04-20","endDate":"2026-05-08","notes":"Blocked by missing DB credentials from client IT — follow up Thursday"},{"id":"1700001005000","taskName":"Frontend integration","projectName":"ERP Migration","resourceIds":["1700000002000"],"startDate":"2026-04-27","endDate":"2026-06-12","notes":"Coordinate with John — depends on backend endpoints being ready by 09 May"},{"id":"1700001008000","taskName":"ETL pipelines","projectName":"Data Warehouse","resourceIds":["1700000003000"],"startDate":"2026-05-11","endDate":"2026-06-26","notes":"Waiting for data modeling sign-off before starting. Source system access TBC."},{"id":"1700001011000","taskName":"QA & regression testing","projectName":"Customer Portal","resourceIds":["1700000002000"],"startDate":"2026-05-18","endDate":"2026-06-19","notes":"Test plan ready. Needs staging environment — chasing Marco for deployment."},{"id":"1700001013000","taskName":"Performance optimisation","projectName":"API Gateway","resourceIds":["1700000001000"],"startDate":"2026-06-15","endDate":"2026-07-10","notes":"Target p99 latency < 80ms. Profile with k6 first, then tune connection pooling."},{"id":"1700001014000","taskName":"Mobile screen implementation","projectName":"Mobile App Redesign","resourceIds":["1700000002000"],"startDate":"2026-06-08","endDate":"2026-08-07","notes":"React Native build. Polish pass and handoff QA to follow before release."},{"id":"1700001015000","taskName":"Dashboards & reporting","projectName":"Data Warehouse","resourceIds":["1700000003000","1700000001000"],"startDate":"2026-07-06","endDate":"2026-08-07","notes":"BI layer on top of ETL output. Stakeholder review scheduled mid-July."}],"r":[{"id":"1700000001000","name":"John"},{"id":"1700000002000","name":"Sarah"},{"id":"1700000003000","name":"Marco"}],"m":[{"id":"1700002001000","name":"ERP Go-Live","date":"2026-05-11","color":"#F59E0B"},{"id":"1700002002000","name":"UAT Freeze","date":"2026-06-15","color":"#3A86FF"},{"id":"1700002003000","name":"Mobile Release","date":"2026-08-10","color":"#A78BFA"}],"c":{"ERP Migration":"#E84855","API Gateway":"#3A86FF","Data Warehouse":"#06D6A0","Customer Portal":"#FFB703","Mobile App Redesign":"#8338EC"}};
 const STORAGE_KEY = "pm-gantt-v2";
 const THEME_KEY   = "pm-gantt-theme";
 const MIN_WEEK_W  = 80;
@@ -325,7 +326,22 @@ function App() {
     setTasks(t); persist(t,resources,pColors,milestones);
   };
 
+  const cancelForm = () => setForm({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"" });
   const editTask = task => setForm({...task, notes: task.notes || "", resourceIds: task.resourceIds || []});
+
+  const loadSampleData = () => {
+    setTasks(normalizeTasks(SAMPLE_DATA.t));
+    setResources(SAMPLE_DATA.r);
+    setPColors(SAMPLE_DATA.c);
+    setMilestones(SAMPLE_DATA.m);
+    persist(SAMPLE_DATA.t, SAMPLE_DATA.r, SAMPLE_DATA.c, SAMPLE_DATA.m);
+  };
+
+  React.useEffect(() => {
+    const handler = e => { if (e.key === "Escape") cancelForm(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const addMilestone = () => {
     if (!mForm.name.trim() || !mForm.date) return;
@@ -533,8 +549,8 @@ function App() {
             {/* NEW TASK / EDIT TASK */}
             <div>
               <div style={{...S.label, marginBottom:8}}>{form.id?"EDIT TASK":"NEW TASK"}</div>
-              <input value={form.taskName} onChange={e=>setForm({...form,taskName:e.target.value})} placeholder="Task name" style={{...S.input, marginBottom:5}} />
-              <input value={form.projectName} onChange={e=>setForm({...form,projectName:e.target.value})} placeholder="Project name" style={{...S.input, marginBottom:5}} list="projects-list" />
+              <input value={form.taskName} onChange={e=>setForm({...form,taskName:e.target.value})} onKeyDown={e=>e.key==="Enter"&&submitForm()} placeholder="Task name" style={{...S.input, marginBottom:5}} />
+              <input value={form.projectName} onChange={e=>setForm({...form,projectName:e.target.value})} onKeyDown={e=>e.key==="Enter"&&submitForm()} placeholder="Project name" style={{...S.input, marginBottom:5}} list="projects-list" />
               <datalist id="projects-list">{projects.map(p=><option key={p} value={p}/>)}</datalist>
               <div style={{border:"1px solid var(--border)", borderRadius:6, background:"var(--input-bg)", marginBottom:5, padding:"5px 9px", maxHeight:96, overflowY:"auto"}}>
                 {resources.length === 0
@@ -561,7 +577,7 @@ function App() {
                 {form.id?"Save changes":"Add"}
               </button>
               {form.id && (
-                <button onClick={()=>setForm({id:null,taskName:"",projectName:"",resourceIds:[],startDate:"",endDate:"",notes:""})}
+                <button onClick={cancelForm}
                   style={{width:"100%", padding:"6px", borderRadius:6, border:"1px solid var(--border)", background:"transparent", color:"var(--text-dim)", fontSize:12, cursor:"pointer", marginTop:4}}>
                   Cancel
                 </button>
@@ -598,6 +614,7 @@ function App() {
               <div style={{fontSize:48}}>📊</div>
               <div style={{fontSize:15, fontWeight:700, color:"var(--text-dim)"}}>No tasks yet</div>
               <div style={{fontSize:12, color:"var(--text-faint)"}}>Add resources and tasks from the left panel</div>
+              <button onClick={loadSampleData} style={{marginTop:8, padding:"7px 18px", borderRadius:6, border:"1px solid var(--border)", background:"transparent", color:"var(--text-dim)", fontSize:12, fontWeight:600, cursor:"pointer"}}>Load sample data</button>
             </div>
           ) : (
             <div style={{display:"flex", flexDirection:"column", gap:24}}>
