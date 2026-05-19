@@ -180,8 +180,8 @@ function App() {
   const [filterResource, setFilterResource] = React.useState("");
   const [filterProject, setFilterProject] = React.useState("");
   const [minVisibleWeeks, setMinVisibleWeeks] = React.useState(8);
-  const [resOpen, setResOpen] = React.useState(false);
-  const [msOpen, setMsOpen] = React.useState(false);
+  const [resOpen, setResOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-resOpen") === "1"; } catch { return false; } });
+  const [msOpen, setMsOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-msOpen") === "1"; } catch { return false; } });
   const [undoSnapshot, setUndoSnapshot] = React.useState(null);
   const mainRef = React.useRef(null);
   const undoTimerRef = React.useRef(null);
@@ -442,7 +442,7 @@ function App() {
 
             {/* RESOURCES — collapsible + chips */}
             <div>
-              <ColHdr label="RESOURCES" count={resources.length} open={resOpen} onToggle={() => setResOpen(o=>!o)} />
+              <ColHdr label="RESOURCES" count={resources.length} open={resOpen} onToggle={() => setResOpen(o=>{ const n=!o; try{localStorage.setItem("pm-gantt-resOpen",n?"1":"0");}catch{} return n; })} />
               {resOpen && (
                 <div style={{marginTop:10}}>
                   {resources.length > 0 && (
@@ -505,7 +505,7 @@ function App() {
 
             {/* MILESTONES — collapsible */}
             <div>
-              <ColHdr label="MILESTONES" count={milestones.length} open={msOpen} onToggle={() => setMsOpen(o=>!o)} />
+              <ColHdr label="MILESTONES" count={milestones.length} open={msOpen} onToggle={() => setMsOpen(o=>{ const n=!o; try{localStorage.setItem("pm-gantt-msOpen",n?"1":"0");}catch{} return n; })} />
               {msOpen && (
                 <div style={{marginTop:10}}>
                   <input value={mForm.name} onChange={e=>setMForm({...mForm,name:e.target.value})} onKeyDown={e=>e.key==="Enter"&&addMilestone()} placeholder="Milestone name" style={{...S.input, marginBottom:5}} />
