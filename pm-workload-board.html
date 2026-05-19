@@ -150,6 +150,7 @@ function startOfMonday(d) {
   r.setDate(r.getDate() + diff); r.setHours(0,0,0,0); return r;
 }
 function fmtShort(d) { return d.toLocaleDateString("en-GB", { day:"2-digit", month:"short" }); }
+function fmtDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
 const heatBg = n => `var(--heat-${Math.min(n, 4)})`;
 const heatFg = n => n===1?"var(--heat-fg-1)": n===2?"var(--heat-fg-2)":"var(--heat-fg-3)";
 
@@ -186,6 +187,8 @@ function App() {
   const [undoSnapshot, setUndoSnapshot] = React.useState(null);
   const mainRef = React.useRef(null);
   const undoTimerRef = React.useRef(null);
+  const dragRef = React.useRef(null);
+  const lastDragMovedRef = React.useRef(false);
 
   // Scroll sync refs
   const ganttScrollRef = React.useRef(null);
@@ -330,6 +333,7 @@ function App() {
   const editTask = task => setForm({...task, notes: task.notes || "", resourceIds: task.resourceIds || []});
 
   const loadSampleData = () => {
+    if (tasks.length > 0 && !window.confirm("This will replace your current data. Continue?")) return;
     setTasks(normalizeTasks(SAMPLE_DATA.t));
     setResources(SAMPLE_DATA.r);
     setPColors(SAMPLE_DATA.c);
@@ -341,6 +345,37 @@ function App() {
     const handler = e => { if (e.key === "Escape") cancelForm(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  React.useEffect(() => {
+    const onMove = e => {
+      if (!dragRef.current) return;
+      const { startX, el } = dragRef.current;
+      const deltaDays = Math.round((e.clientX - startX) / (MIN_WEEK_W / 7));
+      dragRef.current.deltaDays = deltaDays;
+      if (el) el.style.transform = `translateX(${deltaDays * (MIN_WEEK_W / 7)}px)`;
+    };
+    const onUp = () => {
+      if (!dragRef.current) return;
+      const { taskId, origStart, origEnd, deltaDays, el, snap } = dragRef.current;
+      if (el) { el.style.transform = ""; el.style.opacity = ""; }
+      lastDragMovedRef.current = deltaDays !== 0;
+      if (deltaDays !== 0) {
+        const newStart = fmtDate(addDays(parseDate(origStart), deltaDays));
+        const newEnd   = fmtDate(addDays(parseDate(origEnd),   deltaDays));
+        setTasks(prev => {
+          const t = prev.map(x => x.id === taskId ? {...x, startDate: newStart, endDate: newEnd} : x);
+          persist(t, snap.resources, snap.pColors, snap.milestones);
+          return t;
+        });
+      }
+      dragRef.current = null;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
   }, []);
 
   const addMilestone = () => {
@@ -680,7 +715,15 @@ function App() {
                                         <div style={{position:"absolute", top:0, bottom:0, left:todayLeft, width:1, background:"rgba(239,68,68,0.5)", zIndex:2}} />
                                       )}
                                       <div
-                                        onClick={()=>editTask(task)}
+                                        onClick={() => { if (!lastDragMovedRef.current) editTask(task); lastDragMovedRef.current = false; }}
+                                        onMouseDown={e => {
+                                          if (e.button !== 0) return;
+                                          e.preventDefault();
+                                          dragRef.current = { taskId:task.id, startX:e.clientX, origStart:task.startDate, origEnd:task.endDate, el:e.currentTarget, deltaDays:0, snap:{resources, pColors, milestones} };
+                                          e.currentTarget.style.opacity = "0.75";
+                                          document.body.style.cursor = "grabbing";
+                                          document.body.style.userSelect = "none";
+                                        }}
                                         title={(() => { const names = (task.resourceIds||[]).map(id=>resources.find(r=>r.id===id)?.name).filter(Boolean).join(", "); return `${task.taskName}\n${task.projectName}\n${task.startDate} → ${task.endDate}${names ? "\nResources: "+names : ""}${task.notes ? "\n\n"+task.notes : ""}`; })()}
                                         style={{
                                           position:"absolute", ...barStyle(task),
@@ -689,7 +732,7 @@ function App() {
                                           display:"flex", alignItems:"center", padding:"0 8px",
                                           fontSize:10, color:"#fff", fontWeight:600,
                                           overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis",
-                                          cursor:"pointer", zIndex:1,
+                                          cursor:"grab", zIndex:1,
                                           boxShadow:"0 0 0 1px rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.4)"
                                         }}
                                       >
