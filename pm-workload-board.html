@@ -744,7 +744,19 @@ function App() {
                                           document.body.style.cursor = "grabbing";
                                           document.body.style.userSelect = "none";
                                         }}
-                                        title={(() => { const names = (task.resourceIds||[]).map(id=>resources.find(r=>r.id===id)?.name).filter(Boolean).join(", "); return `${task.taskName}\n${task.projectName}\n${task.startDate} → ${task.endDate}${names ? "\nResources: "+names : ""}${task.notes ? "\n\n"+task.notes : ""}`; })()}
+                                        title={(() => {
+                                          const names = (task.resourceIds||[]).map(id=>resources.find(r=>r.id===id)?.name).filter(Boolean).join(", ");
+                                          const days = Math.round((parseDate(task.endDate) - parseDate(task.startDate)) / 86400000) + 1;
+                                          const dur = days >= 14 ? `${Math.round(days/7)} weeks` : `${days} day${days!==1?"s":""}`;
+                                          return [
+                                            task.taskName,
+                                            task.projectName,
+                                            `${task.startDate} → ${task.endDate}  (${dur})`,
+                                            names ? `Resources: ${names}` : null,
+                                            task.completion > 0 ? `${task.completion}% complete` : null,
+                                            task.notes ? `\n${task.notes}` : null,
+                                          ].filter(Boolean).join("\n");
+                                        })()}
                                         style={{
                                           position:"absolute", ...bs,
                                           height:24, borderRadius:5,
