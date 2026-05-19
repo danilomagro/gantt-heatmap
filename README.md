@@ -82,6 +82,8 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Task list sorted by start date
 - [x] Date validation — end date must be ≥ start date
 - [x] Import validation — structural check before accepting a JSON file
+- [x] Persistent sidebar section state — collapsed/expanded remembered across reloads
+- [x] Favicon — inline SVG emoji, no extra files needed
 
 ### Backlog
 
@@ -93,7 +95,6 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 | Medium | "Load sample data" button in empty state — zero-friction onboarding |
 | Medium | Keyboard shortcuts — Esc to cancel form, Enter to confirm |
 | Medium | Print layout optimisation for large datasets — auto-scale or date range selector |
-| Low | Persistent sidebar section state — remember collapsed/expanded across reloads |
 
 ---
 
