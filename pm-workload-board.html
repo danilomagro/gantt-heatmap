@@ -45,6 +45,8 @@
     --heat-fg-2:        #FDE68A;
     --heat-fg-3:        #FCA5A5;
     --row-alt:          rgba(255,255,255,0.01);
+    --progress-fill:    rgba(255,255,255,0.88);
+    --progress-track:   rgba(255,255,255,0.18);
     color-scheme: dark;
   }
 
@@ -75,6 +77,8 @@
     --heat-fg-2:        #78350F;
     --heat-fg-3:        #9A3412;
     --row-alt:          rgba(0,0,0,0.02);
+    --progress-fill:    rgba(0,0,0,0.65);
+    --progress-track:   rgba(0,0,0,0.15);
     color-scheme: light;
   }
 
@@ -727,8 +731,8 @@ function App() {
                                         <div style={{position:"absolute", top:0, bottom:0, left:todayLeft, width:1, background:"rgba(239,68,68,0.5)", zIndex:2}} />
                                       )}
                                       {pct > 0 && <>
-                                        <div style={{position:"absolute", left:bs.left, width:bs.width, height:3, bottom:6, background:col, opacity:0.2, borderRadius:2, zIndex:2}} />
-                                        <div style={{position:"absolute", left:bs.left, width:`${parseFloat(bs.width)*pct/100}px`, height:3, bottom:6, background:col, opacity:0.9, borderRadius:2, zIndex:3}} />
+                                        <div style={{position:"absolute", left:bs.left, width:bs.width, height:3, bottom:6, background:"var(--progress-track)", borderRadius:2, zIndex:2}} />
+                                        <div style={{position:"absolute", left:bs.left, width:`${parseFloat(bs.width)*pct/100}px`, height:3, bottom:6, background:"var(--progress-fill)", borderRadius:2, zIndex:3}} />
                                       </>}
                                       <div
                                         onClick={() => { if (!lastDragMovedRef.current) editTask(task); lastDragMovedRef.current = false; }}
