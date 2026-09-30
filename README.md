@@ -106,6 +106,8 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Tentative tasks — striped bars, Hide / Show / Count toggle, one-click confirm
+- [x] Low-effort tasks (< 50 %) drawn as light, slimmer bars
 - [x] Effort % per task + heatmap in % of capacity — optional fields folded under "More options" so adding a task stays four fields
 - [x] Resize bars by dragging their edges — change start or end date directly on the Gantt
 - [x] Typography pass — minimum 11px text, 12–13px primary labels (Fluent 2 / Material 3 scale), taller Gantt bars; much sharper on 1080p monitors
