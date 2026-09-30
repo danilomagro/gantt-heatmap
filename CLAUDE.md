@@ -22,7 +22,7 @@ Board data under key `pm-gantt-v2`:
 
 ```js
 {
-  t: [{ id, taskName, projectName, resourceIds: [id], startDate: "YYYY-MM-DD", endDate: "YYYY-MM-DD", notes, completion /* 0-100 or "" */ }],
+  t: [{ id, taskName, projectName, resourceIds: [id], startDate: "YYYY-MM-DD", endDate: "YYYY-MM-DD", notes, completion /* 0-100 or null */, allocation /* effort 1-100, missing = 100 */ }],
   r: [{ id, name }],
   c: { "Project name": "#HEX" },          // auto-assigned from COLORS palette
   m: [{ id, name, date: "YYYY-MM-DD", color }]
@@ -31,6 +31,8 @@ Board data under key `pm-gantt-v2`:
 
 - `normalizeTasks()` migrates legacy `resourceId` (singular) → `resourceIds[]`. Keep backward compatibility with old exports and share links.
 - UI preferences have their own keys: `pm-gantt-theme`, `pm-gantt-gran`, `pm-gantt-group`, `pm-gantt-resOpen`, `pm-gantt-msOpen`, `pm-gantt-tasksOpen`. Wrap every localStorage access in try/catch.
+- Heatmap load = Σ(effort × task working days in the week) / 5 days, in %. `LOAD_STEPS` [100,200,300] map load to heat levels 1–4 (an all-100 % board reproduces the old parallel-task scale).
+- Keep task creation light: only name, project, people, dates are visible; optional fields live under "More options" and new tasks inherit effort from the project's latest task.
 - Share links encode the board as base64url JSON in `#board=…`; the app then shows a non-saving preview with "Import to my board".
 
 ## Typography

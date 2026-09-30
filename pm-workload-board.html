@@ -143,7 +143,7 @@
 
 const COLORS = ["#E84855","#3A86FF","#06D6A0","#FFB703","#8338EC","#FF6B35","#4ECDC4","#A78BFA","#F472B6","#34D399"];
 const MILESTONE_COLORS = ["#F59E0B","#EF4444","#06D6A0","#3A86FF","#A78BFA"];
-const SAMPLE_DATA = {"t":[{"id":"1700001001000","taskName":"Backend integration","projectName":"ERP Migration","resourceIds":["1700000001000","1700000003000"],"startDate":"2026-04-20","endDate":"2026-05-08","notes":"Blocked by missing DB credentials from client IT — follow up Thursday"},{"id":"1700001005000","taskName":"Frontend integration","projectName":"ERP Migration","resourceIds":["1700000002000"],"startDate":"2026-04-27","endDate":"2026-06-12","notes":"Coordinate with John — depends on backend endpoints being ready by 09 May"},{"id":"1700001008000","taskName":"ETL pipelines","projectName":"Data Warehouse","resourceIds":["1700000003000"],"startDate":"2026-05-11","endDate":"2026-06-26","notes":"Waiting for data modeling sign-off before starting. Source system access TBC."},{"id":"1700001011000","taskName":"QA & regression testing","projectName":"Customer Portal","resourceIds":["1700000002000"],"startDate":"2026-05-18","endDate":"2026-06-19","notes":"Test plan ready. Needs staging environment — chasing Marco for deployment."},{"id":"1700001013000","taskName":"Performance optimisation","projectName":"API Gateway","resourceIds":["1700000001000"],"startDate":"2026-06-15","endDate":"2026-07-10","notes":"Target p99 latency < 80ms. Profile with k6 first, then tune connection pooling."},{"id":"1700001014000","taskName":"Mobile screen implementation","projectName":"Mobile App Redesign","resourceIds":["1700000002000"],"startDate":"2026-06-08","endDate":"2026-08-07","notes":"React Native build. Polish pass and handoff QA to follow before release."},{"id":"1700001015000","taskName":"Dashboards & reporting","projectName":"Data Warehouse","resourceIds":["1700000003000","1700000001000"],"startDate":"2026-07-06","endDate":"2026-08-07","notes":"BI layer on top of ETL output. Stakeholder review scheduled mid-July."}],"r":[{"id":"1700000001000","name":"John"},{"id":"1700000002000","name":"Sarah"},{"id":"1700000003000","name":"Marco"}],"m":[{"id":"1700002001000","name":"ERP Go-Live","date":"2026-05-11","color":"#F59E0B"},{"id":"1700002002000","name":"UAT Freeze","date":"2026-06-15","color":"#3A86FF"},{"id":"1700002003000","name":"Mobile Release","date":"2026-08-10","color":"#A78BFA"}],"c":{"ERP Migration":"#E84855","API Gateway":"#3A86FF","Data Warehouse":"#06D6A0","Customer Portal":"#FFB703","Mobile App Redesign":"#8338EC"}};
+const SAMPLE_DATA = {"t":[{"id":"1700001001000","taskName":"Backend integration","projectName":"ERP Migration","resourceIds":["1700000001000","1700000003000"],"startDate":"2026-04-20","endDate":"2026-05-08","notes":"Blocked by missing DB credentials from client IT — follow up Thursday"},{"id":"1700001005000","taskName":"Frontend integration","projectName":"ERP Migration","resourceIds":["1700000002000"],"startDate":"2026-04-27","endDate":"2026-06-12","notes":"Coordinate with John — depends on backend endpoints being ready by 09 May"},{"id":"1700001008000","taskName":"ETL pipelines","projectName":"Data Warehouse","resourceIds":["1700000003000"],"startDate":"2026-05-11","endDate":"2026-06-26","notes":"Waiting for data modeling sign-off before starting. Source system access TBC."},{"id":"1700001011000","taskName":"QA & regression testing","projectName":"Customer Portal","resourceIds":["1700000002000"],"startDate":"2026-05-18","endDate":"2026-06-19","notes":"Test plan ready. Needs staging environment — chasing Marco for deployment."},{"id":"1700001013000","taskName":"Performance optimisation","projectName":"API Gateway","resourceIds":["1700000001000"],"startDate":"2026-06-15","endDate":"2026-07-10","notes":"Target p99 latency < 80ms. Profile with k6 first, then tune connection pooling."},{"id":"1700001014000","taskName":"Mobile screen implementation","projectName":"Mobile App Redesign","resourceIds":["1700000002000"],"startDate":"2026-06-08","endDate":"2026-08-07","notes":"React Native build. Polish pass and handoff QA to follow before release."},{"id":"1700001015000","taskName":"Dashboards & reporting","projectName":"Data Warehouse","resourceIds":["1700000003000","1700000001000"],"startDate":"2026-07-06","endDate":"2026-08-07","notes":"BI layer on top of ETL output. Stakeholder review scheduled mid-July."},{"id":"1700001016000","taskName":"Help-desk rotation","projectName":"Help Desk","resourceIds":["1700000001000","1700000002000","1700000003000"],"startDate":"2026-04-20","endDate":"2026-08-14","allocation":20,"notes":"Permanent support duty — about one day a week each."}],"r":[{"id":"1700000001000","name":"John"},{"id":"1700000002000","name":"Sarah"},{"id":"1700000003000","name":"Marco"}],"m":[{"id":"1700002001000","name":"ERP Go-Live","date":"2026-05-11","color":"#F59E0B"},{"id":"1700002002000","name":"UAT Freeze","date":"2026-06-15","color":"#3A86FF"},{"id":"1700002003000","name":"Mobile Release","date":"2026-08-10","color":"#A78BFA"}],"c":{"ERP Migration":"#E84855","API Gateway":"#3A86FF","Data Warehouse":"#06D6A0","Customer Portal":"#FFB703","Mobile App Redesign":"#8338EC","Help Desk":"#4ECDC4"}};
 const STORAGE_KEY = "pm-gantt-v2";
 const THEME_KEY   = "pm-gantt-theme";
 const GRAN_KEY    = "pm-gantt-gran";
@@ -170,6 +170,20 @@ function getISOWeek(d) {
   const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
   return Math.ceil(((t - y) / 86400000 + 1) / 7);
 }
+// ── effort / load ──────────────────────────────────────────────────────────
+// allocation = share of a person's time the task takes (1–100 %, missing = 100)
+const ALLOC_PRESETS = [100, 50, 20];
+const allocOf = t => (t.allocation > 0 ? Math.min(100, t.allocation) : 100);
+const clampAlloc = v => Math.min(100, Math.max(1, parseInt(v) || 100));
+function workingDays(from, to) {           // Mon–Fri count, inclusive
+  let n = 0;
+  for (let d = new Date(from); d <= to; d = addDays(d, 1)) { const w = d.getDay(); if (w !== 0 && w !== 6) n++; }
+  return n;
+}
+// Heat level from weekly load in % of capacity. With every task at 100 % this
+// reproduces the original 1 / 2 / 3 / 4+ parallel-task scale.
+const LOAD_STEPS = [100, 200, 300];
+const loadLevel = pct => pct <= 0 ? 0 : pct <= LOAD_STEPS[0] ? 1 : pct <= LOAD_STEPS[1] ? 2 : pct <= LOAD_STEPS[2] ? 3 : 4;
 const heatBg = n => `var(--heat-${Math.min(n, 4)})`;
 const heatFg = n => n===1?"var(--heat-fg-1)": n===2?"var(--heat-fg-2)":"var(--heat-fg-3)";
 
@@ -222,7 +236,7 @@ function App() {
   });
   const [mainWidth, setMainWidth] = React.useState(800);
   const [view, setView] = React.useState("both");
-  const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"", completion:"" });
+  const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"", completion:"", allocation:100, allocTouched:false });
   const [mForm, setMForm] = React.useState({ name:"", date:"", color:"#F59E0B" });
   const [newRes, setNewRes] = React.useState("");
   const [sideOpen, setSideOpen] = React.useState(true);
@@ -230,6 +244,7 @@ function App() {
   const [filterProject, setFilterProject] = React.useState("");
   const [resOpen, setResOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-resOpen") === "1"; } catch { return false; } });
   const [msOpen, setMsOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-msOpen") === "1"; } catch { return false; } });
+  const [moreOpen, setMoreOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-moreOpen") === "1"; } catch { return false; } });
   const [tasksOpen, setTasksOpen] = React.useState(() => { try { const v = localStorage.getItem("pm-gantt-tasksOpen"); return v === null ? true : v === "1"; } catch { return true; } });
   const [undoSnapshot, setUndoSnapshot] = React.useState(null);
   const [editModal, setEditModal] = React.useState(null);  // null or {task fields}
@@ -417,11 +432,19 @@ function App() {
   }, [weeks, dayW, sharedTimelineW]);
 
   // ── heatmap data (always weekly) ──────────────────────────────────────────
+  // Each cell: tasks touching the week, each with its share of the week (% of 5 working days × effort)
   const heatmap = React.useMemo(() => resources.map(res => ({
     res,
     cols: weeks.map(ws => {
       const we = addDays(ws,6);
-      return tasks.filter(t => t.resourceIds.includes(res.id) && parseDate(t.startDate)<=we && parseDate(t.endDate)>=ws);
+      const items = tasks
+        .filter(t => t.resourceIds.includes(res.id) && parseDate(t.startDate)<=we && parseDate(t.endDate)>=ws)
+        .map(task => {
+          const s = parseDate(task.startDate), e = parseDate(task.endDate);
+          const days = workingDays(s > ws ? s : ws, e < we ? e : we);
+          return { task, pct: allocOf(task) * days / 5 };
+        });
+      return { items, load: Math.round(items.reduce((a, x) => a + x.pct, 0)) };
     })
   })), [resources, tasks, weeks]);
 
@@ -450,15 +473,16 @@ function App() {
 
   const submitForm = () => {
     const { id, taskName, projectName, resourceIds, startDate, endDate, notes, completion } = form;
+    const allocation = clampAlloc(form.allocation);
     if (!taskName||!projectName||!resourceIds.length||!startDate||!endDate) return;
     if (endDate < startDate) { alert("End date must be on or after start date."); return; }
     const pct = completion === "" ? null : Math.min(100, Math.max(0, parseInt(completion)||0));
     const c = assignColor(projectName, pColors);
     const t = id
-      ? tasks.map(x => x.id===id ? {...x,taskName,projectName,resourceIds,startDate,endDate,notes,completion:pct} : x)
-      : [...tasks, { id:Date.now().toString(), taskName, projectName, resourceIds, startDate, endDate, notes, completion:pct }];
+      ? tasks.map(x => x.id===id ? {...x,taskName,projectName,resourceIds,startDate,endDate,notes,completion:pct,allocation} : x)
+      : [...tasks, { id:Date.now().toString(), taskName, projectName, resourceIds, startDate, endDate, notes, completion:pct, allocation }];
     setTasks(t); setPColors(c); persist(t, resources, c, milestones);
-    setForm({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"", completion:"" });
+    setForm({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"", completion:"", allocation:100, allocTouched:false });
   };
 
   const delTask = id => {
@@ -467,10 +491,16 @@ function App() {
     setTasks(t); persist(t,resources,pColors,milestones);
   };
 
-  const cancelForm = () => setForm({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"", completion:"" });
-  const editTask = task => setForm({...task, notes: task.notes || "", resourceIds: task.resourceIds || [], completion: task.completion ?? ""});
+  const cancelForm = () => setForm({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"", completion:"", allocation:100, allocTouched:false });
+  const editTask = task => setForm({...task, notes: task.notes || "", resourceIds: task.resourceIds || [], completion: task.completion ?? "", allocation: allocOf(task), allocTouched: true});
 
-  const openEditModal = task => setEditModal({...task, notes: task.notes||"", resourceIds: task.resourceIds||[], completion: task.completion??""});
+  // New tasks inherit the effort of the latest task in the same project (e.g. Help Desk → 20 %)
+  const projectAlloc = name => {
+    const last = tasks.filter(t => t.projectName === name).sort((a, b) => b.startDate.localeCompare(a.startDate))[0];
+    return last ? allocOf(last) : 100;
+  };
+
+  const openEditModal = task => setEditModal({...task, notes: task.notes||"", resourceIds: task.resourceIds||[], completion: task.completion??"", allocation: allocOf(task)});
 
   const submitModal = () => {
     if (!editModal) return;
@@ -479,7 +509,8 @@ function App() {
     if (endDate < startDate) { alert("End date must be on or after start date."); return; }
     const pct = completion === "" ? null : Math.min(100, Math.max(0, parseInt(completion)||0));
     const c = assignColor(projectName, pColors);
-    const t = tasks.map(x => x.id===id ? {...x,taskName,projectName,resourceIds,startDate,endDate,notes,completion:pct} : x);
+    const allocation = clampAlloc(editModal.allocation);
+    const t = tasks.map(x => x.id===id ? {...x,taskName,projectName,resourceIds,startDate,endDate,notes,completion:pct,allocation} : x);
     setTasks(t); setPColors(c); persist(t, resources, c, milestones);
     setEditModal(null);
   };
@@ -668,6 +699,18 @@ function App() {
     );
   };
 
+  const renderAllocPicker = (value, onChange) => (
+    <div style={{display:"flex", gap:4, alignItems:"center"}}>
+      {ALLOC_PRESETS.map(p => (
+        <button key={p} type="button" onClick={() => onChange(p)} style={{...S.btn(value===p), padding:"4px 9px", fontSize:12}}>{p}%</button>
+      ))}
+      <input type="number" min="1" max="100" step="5" placeholder="other"
+        value={ALLOC_PRESETS.includes(value) ? "" : value}
+        onChange={e => e.target.value !== "" && onChange(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
+        style={{...S.input, width:62, flex:"none", textAlign:"center", padding:"4px 4px", borderColor: ALLOC_PRESETS.includes(value) ? "var(--border)" : "#2563EB"}} />
+    </div>
+  );
+
   // ── Gantt column header label ─────────────────────────────────────────────
   const ganttColLabel = (col) => {
     const d = col.date;
@@ -829,6 +872,7 @@ function App() {
                       task.projectName,
                       `${task.startDate} → ${task.endDate}  (${dur})`,
                       names ? `Resources: ${names}` : null,
+                      allocOf(task) < 100 ? `Effort: ${allocOf(task)}% of their time` : null,
                       task.completion > 0 ? `${task.completion}% complete` : null,
                       task.notes ? `\n${task.notes}` : null,
                     ].filter(Boolean).join("\n");
@@ -845,6 +889,9 @@ function App() {
                   }}
                 >
                   {task.taskName}
+                  {allocOf(task) < 100 && (
+                    <span style={{marginLeft:6, padding:"0 5px", borderRadius:8, background:"rgba(0,0,0,0.28)", fontSize:11, fontWeight:600, flexShrink:0}}>{allocOf(task)}%</span>
+                  )}
                   {task.notes && (
                     <div style={{position:"absolute", top:3, right:4, width:5, height:5, borderRadius:"50%", background:"#fff", opacity:0.6, flexShrink:0}} />
                   )}
@@ -1016,7 +1063,7 @@ function App() {
             <div>
               <div style={{...S.label, marginBottom:8}}>{form.id?"EDIT TASK":"NEW TASK"}</div>
               <input value={form.taskName} onChange={e=>setForm({...form,taskName:e.target.value})} onKeyDown={e=>e.key==="Enter"&&submitForm()} placeholder="Task name" style={{...S.input, marginBottom:5}} />
-              <input value={form.projectName} onChange={e=>setForm({...form,projectName:e.target.value})} onKeyDown={e=>e.key==="Enter"&&submitForm()} placeholder="Project name" style={{...S.input, marginBottom:5}} list="projects-list" />
+              <input value={form.projectName} onChange={e=>{ const projectName = e.target.value; setForm(f => ({...f, projectName, allocation: f.allocTouched ? f.allocation : projectAlloc(projectName)})); }} onKeyDown={e=>e.key==="Enter"&&submitForm()} placeholder="Project name" style={{...S.input, marginBottom:5}} list="projects-list" />
               <datalist id="projects-list">{projects.map(p=><option key={p} value={p}/>)}</datalist>
               <div style={{border:"1px solid var(--border)", borderRadius:6, background:"var(--input-bg)", marginBottom:5, padding:"5px 9px", maxHeight:96, overflowY:"auto"}}>
                 {resources.length === 0
@@ -1038,11 +1085,28 @@ function App() {
                 <input type="date" lang="en-GB" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})} style={{...S.input, flex:1, minWidth:0, fontSize:12}} />
                 <input type="date" lang="en-GB" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})} style={{...S.input, flex:1, minWidth:0, fontSize:12}} />
               </div>
-              <textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Notes (optional)" rows={2} style={{...S.input, marginBottom:5, resize:"vertical", fontFamily:"inherit", lineHeight:1.4}} />
-              <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:8}}>
-                <input type="number" min="0" max="100" value={form.completion} onChange={e=>setForm({...form,completion:e.target.value})} placeholder="—" style={{...S.input, width:56, flex:"none", textAlign:"center"}} />
-                <span style={{fontSize:12, color:"var(--text-dim)"}}>% complete <span style={{color:"var(--text-dimmer)"}}>(optional)</span></span>
+              {/* Optional fields stay folded away; the summary shows any non-default value */}
+              <div onClick={() => setMoreOpen(o => { const n=!o; try{localStorage.setItem("pm-gantt-moreOpen",n?"1":"0");}catch{} return n; })}
+                style={{display:"flex", alignItems:"center", gap:6, cursor:"pointer", userSelect:"none", padding:"3px 0", marginBottom:5, fontSize:12, color:"var(--text-dim)"}}>
+                <span style={{fontSize:13, width:10}}>{moreOpen ? "∨" : "›"}</span>
+                <span>More options</span>
+                {!moreOpen && (() => {
+                  const bits = [form.allocation !== 100 && `${form.allocation}% effort`, form.notes && "notes", form.completion !== "" && `${form.completion}% done`].filter(Boolean);
+                  return bits.length ? <span style={{color:"#60A5FA", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>· {bits.join(" · ")}</span> : null;
+                })()}
               </div>
+              {moreOpen && (
+                <div style={{paddingLeft:4, marginBottom:4}}>
+                  <div style={{fontSize:12, color:"var(--text-dim)", marginBottom:4}}>Effort <span style={{color:"var(--text-dimmer)"}}>— share of each person's time</span></div>
+                  <div style={{marginBottom:8}}>{renderAllocPicker(form.allocation, v => setForm(f => ({...f, allocation:v, allocTouched:true})))}</div>
+                  <textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Notes (optional)" rows={2} style={{...S.input, marginBottom:5, resize:"vertical", fontFamily:"inherit", lineHeight:1.4}} />
+                  <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:4}}>
+                    <input type="number" min="0" max="100" value={form.completion} onChange={e=>setForm({...form,completion:e.target.value})} placeholder="—" style={{...S.input, width:56, flex:"none", textAlign:"center"}} />
+                    <span style={{fontSize:12, color:"var(--text-dim)"}}>% complete</span>
+                  </div>
+                </div>
+              )}
+              <div style={{height:4}} />
               <button onClick={submitForm} style={{width:"100%", padding:"8px", borderRadius:6, border:"none", background:"#2563EB", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>
                 {form.id?"Save changes":"Add"}
               </button>
@@ -1065,7 +1129,7 @@ function App() {
                     <div key={t.id} style={{...S.card, borderLeft:`3px solid ${col}`, marginBottom:5}}>
                       <div style={{fontSize:13, fontWeight:600, color:"var(--text)", marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{t.taskName}</div>
                       <div style={{fontSize:11, color:"var(--text-dim)"}}>{t.projectName}</div>
-                      <div style={{fontSize:11, color:"var(--text-dimmer)"}}>{resNames} · {t.startDate} → {t.endDate}{t.completion > 0 ? ` · ${t.completion}%` : ""}</div>
+                      <div style={{fontSize:11, color:"var(--text-dimmer)"}}>{resNames} · {t.startDate} → {t.endDate}{allocOf(t) < 100 ? ` · ${allocOf(t)}% effort` : ""}{t.completion > 0 ? ` · ${t.completion}% done` : ""}</div>
                       <div style={{display:"flex", gap:5, marginTop:6}}>
                         <button onClick={()=>editTask(t)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"1px solid var(--border)", background:"transparent", color:"var(--text-muted)", fontSize:11, cursor:"pointer"}}>✏ Edit</button>
                         <button onClick={()=>delTask(t.id)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"none", background:"rgba(127,29,29,0.5)", color:"#FCA5A5", fontSize:11, cursor:"pointer"}}>✕ Del</button>
@@ -1223,39 +1287,35 @@ function App() {
                           .map(({res,cols}) => (
                             <div key={res.id} style={{display:"flex", borderTop:"1px solid var(--border)"}}>
                               <div style={{width:LABEL_W, flexShrink:0, padding:"10px", fontSize:13, fontWeight:600, color:"var(--text-heatmap-res)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", position:"sticky", left:0, background:"var(--surface)", zIndex:1}}>{res.name}</div>
-                              {cols.map((cellTasks,i) => {
-                                const totalN   = cellTasks.length;
-                                const projectTasks = filterProject ? cellTasks.filter(t=>t.projectName===filterProject) : cellTasks;
-                                const projectN = projectTasks.length;
-                                const tooltipText = () => {
-                                  if (totalN === 0) return "";
-                                  if (filterProject) {
-                                    const header = `${filterProject}: ${projectN} of ${totalN} task(s) this week`;
-                                    const projLines = projectTasks.length ? "\n" + projectTasks.map(t=>`• ${t.taskName}`).join("\n") : "";
-                                    const others = cellTasks.filter(t=>t.projectName!==filterProject);
-                                    const otherLines = others.length ? "\nOther projects:\n" + others.map(t=>`• ${t.taskName} (${t.projectName})`).join("\n") : "";
-                                    return header + projLines + otherLines;
-                                  }
-                                  return cellTasks.map(t=>`${t.taskName} (${t.projectName})`).join("\n");
-                                };
+                              {cols.map(({items, load}, i) => {
+                                const projItems = filterProject ? items.filter(x => x.task.projectName === filterProject) : items;
+                                const projLoad  = Math.round(projItems.reduce((a, x) => a + x.pct, 0));
+                                const lvl = loadLevel(load);
+                                const line = x => `• ${x.task.taskName} (${x.task.projectName}) — ${Math.round(x.pct)}%` + (allocOf(x.task) < 100 && Math.round(x.pct) !== allocOf(x.task) ? ` (${allocOf(x.task)}% effort)` : "");
+                                const tooltip = items.length === 0 ? "" : [
+                                  `${res.name} · W${getISOWeek(weeks[i])}: ${load}% of capacity`,
+                                  filterProject ? `${filterProject}: ${projLoad}%` : null,
+                                  ...items.map(line),
+                                ].filter(Boolean).join("\n");
+                                const text = filterProject ? `${projLoad}/${load}` : heatColW >= 60 ? `${load}%` : `${load}`;
                                 return (
                                   <div key={i}
-                                    title={tooltipText()}
+                                    title={tooltip}
                                     style={{
                                       width: heatColW,
                                       flexShrink: 0,
                                       display: "flex",
                                       alignItems: "center",
                                       justifyContent: "center",
-                                      background: heatBg(totalN),
+                                      background: heatBg(lvl),
                                       borderRight: i<weeks.length-1 ? "1px solid var(--border-subtle)" : "",
                                       minHeight: 34,
-                                      cursor: totalN>0 ? "pointer" : "default",
+                                      cursor: items.length>0 ? "pointer" : "default",
                                     }}
                                   >
-                                    {totalN>0 && heatColW >= 18 && (
-                                      <span style={{fontSize:Math.min(13, heatColW * 0.4), fontWeight:700, color:heatFg(totalN), letterSpacing:"-0.5px"}}>
-                                        {filterProject ? `${projectN}/${totalN}` : totalN}
+                                    {load>0 && heatColW >= 18 && (
+                                      <span style={{fontSize:Math.min(13, heatColW * 0.34), fontWeight:700, color:heatFg(lvl), letterSpacing:"-0.5px"}}>
+                                        {text}
                                       </span>
                                     )}
                                   </div>
@@ -1268,11 +1328,11 @@ function App() {
 
                   </div>
                   <div style={{display:"flex", gap:10, marginTop:8, alignItems:"center", flexWrap:"wrap"}}>
-                    <span style={{fontSize:11, color:"var(--text-dimmer)"}}>Parallel tasks:</span>
+                    <span style={{fontSize:11, color:"var(--text-dimmer)"}}>Weekly load, % of capacity:</span>
                     {[0,1,2,3,4].map(n => (
                       <div key={n} style={{display:"flex", alignItems:"center", gap:4}}>
                         <div style={{width:18, height:18, borderRadius:3, background:heatBg(n), border:"1px solid var(--border)"}} />
-                        <span style={{fontSize:11, color:"var(--text-dim)"}}>{n===4?"4+":n}</span>
+                        <span style={{fontSize:11, color:"var(--text-dim)"}}>{n===0 ? "0" : n===4 ? `>${LOAD_STEPS[2]}%` : `≤${LOAD_STEPS[n-1]}%`}</span>
                       </div>
                     ))}
                   </div>
@@ -1352,6 +1412,10 @@ function App() {
                   <input type="date" lang="en-GB" value={editModal.startDate} onChange={e => setEditModal({...editModal, startDate:e.target.value})} style={{...S.input, flex:1, minWidth:0, fontSize:12}} />
                   <input type="date" lang="en-GB" value={editModal.endDate}   onChange={e => setEditModal({...editModal, endDate:e.target.value})}   style={{...S.input, flex:1, minWidth:0, fontSize:12}} />
                 </div>
+
+                {/* Effort */}
+                <div style={{...S.label, marginBottom:5}}>EFFORT <span style={{fontWeight:400, letterSpacing:0, textTransform:"none"}}>— share of each person's time</span></div>
+                <div style={{marginBottom:12}}>{renderAllocPicker(editModal.allocation, v => setEditModal(m => ({...m, allocation:v})))}</div>
 
                 {/* Completion */}
                 <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:12}}>

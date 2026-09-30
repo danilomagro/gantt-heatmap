@@ -30,7 +30,8 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Cross-project Gantt** | Timeline grouped by resource, bars coloured by project, red line = today, click bar to edit |
 | **Group by Resource / Project** | Toggle the Gantt between person → tasks and project → people involved; overlapping bars stack in lanes, choice saved in localStorage |
 | **Day / Week / Month zoom** | Switch timeline granularity — day view shows weekends dimmed, week view shows ISO week numbers (W19…), month view gives a bird's-eye overview |
-| **Capacity Heatmap** | Derived automatically from Gantt — resource × week grid, blue → amber → red by parallel task count |
+| **Capacity Heatmap** | Derived automatically from Gantt — resource × week grid showing weekly load as % of capacity (task effort × working days), blue → amber → red |
+| **Effort %** | Optional share of a person's time per task (100 / 50 / 20 % or custom) — a permanent 20 % help-desk duty no longer counts like a full-time project. New tasks inherit the effort of the last task in the same project |
 | **Resource & Project filters** | Focus either view on one person or one project — filters compose, heatmap always shows real total load |
 | **Multi-resource tasks** | Assign a task to multiple people — load propagates to each resource in both views |
 | **Milestone markers** | Vertical overlays on the Gantt with custom label and colour — go-live dates, UAT freezes, deployment windows |
@@ -104,6 +105,7 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Effort % per task + heatmap in % of capacity — optional fields folded under "More options" so adding a task stays four fields
 - [x] Resize bars by dragging their edges — change start or end date directly on the Gantt
 - [x] Typography pass — minimum 11px text, 12–13px primary labels (Fluent 2 / Material 3 scale), taller Gantt bars; much sharper on 1080p monitors
 - [x] Share link — board encoded in URL, opens as a non-saving preview with "Import to my board"
