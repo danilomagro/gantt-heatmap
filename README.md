@@ -36,7 +36,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Milestone markers** | Vertical overlays on the Gantt with custom label and colour — go-live dates, UAT freezes, deployment windows |
 | **Task notes** | Optional free-text notes per task, visible on hover, with a subtle dot indicator on the bar |
 | **Completion %** | Optional progress field per task — thin strip below the Gantt bar, high-contrast colour |
-| **Drag & drop rescheduling** | Drag bars left/right to shift task dates; click without moving still opens edit |
+| **Drag & drop rescheduling** | Drag bars left/right to shift task dates, or drag either edge to change start/end; click without moving still opens edit |
 | **Light / Dark theme** | Toggle between themes, preference saved in localStorage |
 | **Share link** | Encode the whole board in a URL — recipients open it without touching their own data (changes aren't saved) and can import it into their board with one click |
 | **Clear board** | Wipe all data in one step (with confirmation) to start fresh |
@@ -104,6 +104,7 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Resize bars by dragging their edges — change start or end date directly on the Gantt
 - [x] Typography pass — minimum 11px text, 12–13px primary labels (Fluent 2 / Material 3 scale), taller Gantt bars; much sharper on 1080p monitors
 - [x] Share link — board encoded in URL, opens as a non-saving preview with "Import to my board"
 - [x] Gantt grouping toggle — group by resource or by project (people involved per project, unassigned tasks shown separately)

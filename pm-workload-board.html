@@ -511,19 +511,26 @@ function App() {
   React.useEffect(() => {
     const onMove = e => {
       if (!dragRef.current) return;
-      const { startX, el } = dragRef.current;
-      const deltaDays = Math.round((e.clientX - startX) / dayWRef.current);
+      const { startX, el, mode, days, origLeft, origWidth } = dragRef.current;
+      const dw = dayWRef.current;
+      let deltaDays = Math.round((e.clientX - startX) / dw);
+      // resizing never shrinks a task below one day
+      if (mode === "start") deltaDays = Math.min(deltaDays, days - 1);
+      if (mode === "end")   deltaDays = Math.max(deltaDays, 1 - days);
       dragRef.current.deltaDays = deltaDays;
-      if (el) el.style.transform = `translateX(${deltaDays * dayWRef.current}px)`;
+      if (!el) return;
+      if (mode === "move") el.style.transform = `translateX(${deltaDays * dw}px)`;
+      if (mode === "start") { el.style.left = `${origLeft + deltaDays * dw}px`; el.style.width = `${origWidth - deltaDays * dw}px`; }
+      if (mode === "end")   el.style.width = `${origWidth + deltaDays * dw}px`;
     };
     const onUp = () => {
       if (!dragRef.current) return;
-      const { taskId, origStart, origEnd, deltaDays, el, snap } = dragRef.current;
-      if (el) { el.style.transform = ""; el.style.opacity = ""; }
+      const { taskId, mode, origStart, origEnd, origLeft, origWidth, deltaDays, el, snap } = dragRef.current;
+      if (el) { el.style.transform = ""; el.style.opacity = ""; el.style.left = `${origLeft}px`; el.style.width = `${origWidth}px`; }
       lastDragMovedRef.current = deltaDays !== 0;
       if (deltaDays !== 0) {
-        const newStart = fmtDate(addDays(parseDate(origStart), deltaDays));
-        const newEnd   = fmtDate(addDays(parseDate(origEnd),   deltaDays));
+        const newStart = mode === "end"   ? origStart : fmtDate(addDays(parseDate(origStart), deltaDays));
+        const newEnd   = mode === "start" ? origEnd   : fmtDate(addDays(parseDate(origEnd),   deltaDays));
         setTasks(prev => {
           const t = prev.map(x => x.id === taskId ? {...x, startDate: newStart, endDate: newEnd} : x);
           persist(t, snap.resources, snap.pColors, snap.milestones);
@@ -744,6 +751,14 @@ function App() {
       }).filter(g => g.rows.length);
   })();
 
+  // Bar grab zone: outer 7px of each edge resizes, the rest moves (short bars only move)
+  const barEdgeMode = e => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (rect.width < 28) return "move";
+    const x = e.clientX - rect.left;
+    return x <= 7 ? "start" : x >= rect.width - 7 ? "end" : "move";
+  };
+
   // One Gantt row: fixed label column + timeline with bars packed into lanes
   const LANE_H = 32;
   const renderGanttRow = row => {
@@ -785,12 +800,21 @@ function App() {
                 {/* Gantt bar */}
                 <div
                   onClick={() => { if (!lastDragMovedRef.current) openEditModal(task); lastDragMovedRef.current = false; }}
+                  onMouseMove={e => {
+                    if (dragRef.current) return;
+                    e.currentTarget.style.cursor = barEdgeMode(e) === "move" ? "grab" : "ew-resize";
+                  }}
                   onMouseDown={e => {
                     if (e.button !== 0) return;
                     e.preventDefault();
-                    dragRef.current = { taskId:task.id, startX:e.clientX, origStart:task.startDate, origEnd:task.endDate, el:e.currentTarget, deltaDays:0, snap:{resources, pColors, milestones} };
-                    e.currentTarget.style.opacity = "0.75";
-                    document.body.style.cursor = "grabbing";
+                    const el = e.currentTarget;
+                    const mode = barEdgeMode(e);
+                    const days = Math.round((parseDate(task.endDate) - parseDate(task.startDate)) / 86400000) + 1;
+                    dragRef.current = { taskId:task.id, mode, days, startX:e.clientX, origStart:task.startDate, origEnd:task.endDate,
+                                        origLeft:parseFloat(el.style.left), origWidth:parseFloat(el.style.width), el, deltaDays:0,
+                                        snap:{resources, pColors, milestones} };
+                    el.style.opacity = "0.75";
+                    document.body.style.cursor = mode === "move" ? "grabbing" : "ew-resize";
                     document.body.style.userSelect = "none";
                   }}
                   title={(() => {
