@@ -147,6 +147,7 @@ const SAMPLE_DATA = {"t":[{"id":"1700001001000","taskName":"Backend integration"
 const STORAGE_KEY = "pm-gantt-v2";
 const THEME_KEY   = "pm-gantt-theme";
 const GRAN_KEY    = "pm-gantt-gran";
+const GROUP_KEY   = "pm-gantt-group";
 
 // px per calendar day for each granularity
 const DAY_PX   = 38;           // day view:   38 px / day
@@ -215,6 +216,9 @@ function App() {
   const [granularity, setGranularity] = React.useState(() => {
     try { return localStorage.getItem(GRAN_KEY) || "week"; } catch { return "week"; }
   });
+  const [groupBy, setGroupBy] = React.useState(() => {
+    try { return localStorage.getItem(GROUP_KEY) === "project" ? "project" : "resource"; } catch { return "resource"; }
+  });
   const [mainWidth, setMainWidth] = React.useState(800);
   const [view, setView] = React.useState("both");
   const [form, setForm] = React.useState({ id:null, taskName:"", projectName:"", resourceIds:[], startDate:"", endDate:"", notes:"", completion:"" });
@@ -260,6 +264,11 @@ function App() {
   const changeGranularity = (g) => {
     setGranularity(g);
     try { localStorage.setItem(GRAN_KEY, g); } catch {}
+  };
+
+  const changeGroupBy = (g) => {
+    setGroupBy(g);
+    try { localStorage.setItem(GROUP_KEY, g); } catch {}
   };
 
   // ── scroll sync ───────────────────────────────────────────────────────────
@@ -686,6 +695,140 @@ function App() {
     return ""; // too narrow (month view)
   };
 
+  // ── Gantt grouping (by resource or by project) ────────────────────────────
+  // Pack tasks into lanes so overlapping bars on the same row don't collide
+  const packLanes = ts => {
+    const laneEnds = [];
+    const items = [...ts].sort((a, b) => a.startDate.localeCompare(b.startDate)).map(task => {
+      let lane = laneEnds.findIndex(end => end < task.startDate);
+      if (lane === -1) { lane = laneEnds.length; laneEnds.push(task.endDate); } else laneEnds[lane] = task.endDate;
+      return { task, lane };
+    });
+    return { items, lanes: Math.max(1, laneEnds.length) };
+  };
+
+  const loadBadge = n => ({ background: n>=3?"#7F1D1D":n===2?"#78350F":"#1E3A5F", color: n>=3?"#FCA5A5":n===2?"#FDE68A":"#93C5FD" });
+
+  const ganttGroups = (() => {
+    const visibleRes = resources.filter(res => !filterResource || res.id === filterResource);
+    if (groupBy === "resource") {
+      return visibleRes.map(res => {
+        const resTasks = tasks.filter(t => t.resourceIds.includes(res.id) && (!filterProject || t.projectName===filterProject));
+        return {
+          key: res.id, name: res.name,
+          badge: resTasks.length, badgeTitle: `${resTasks.length} task(s)`, badgeStyle: loadBadge(resTasks.length),
+          rows: resTasks.map(t => ({ key: t.id, label: t.taskName, dot: pColors[t.projectName]||"#3B82F6", tasks: [t] })),
+        };
+      }).filter(g => g.rows.length);
+    }
+    // by project: projects ordered by earliest start, one row per person involved
+    const firstStart = p => tasks.filter(t => t.projectName===p).map(t => t.startDate).sort()[0];
+    return [...projects]
+      .filter(p => !filterProject || p === filterProject)
+      .sort((a, b) => firstStart(a).localeCompare(firstStart(b)))
+      .map(p => {
+        const pTasks = tasks.filter(t => t.projectName===p);
+        const rows = visibleRes
+          .map(res => ({ key: `${p}|${res.id}`, label: res.name, tasks: pTasks.filter(t => t.resourceIds.includes(res.id)) }))
+          .filter(r => r.tasks.length);
+        const unassigned = pTasks.filter(t => !t.resourceIds.some(id => resources.find(r => r.id === id)));
+        if (unassigned.length && !filterResource) rows.push({ key: `${p}|-`, label: "Unassigned", muted: true, tasks: unassigned });
+        const people = rows.filter(r => !r.muted).length;
+        return {
+          key: p, name: p, color: pColors[p]||"#3B82F6",
+          badge: people, badgeTitle: `${people} ${people===1?"person":"people"} involved`,
+          badgeStyle: { background:"var(--btn-bg)", color:"var(--text-muted)", border:"1px solid var(--border)" },
+          rows,
+        };
+      }).filter(g => g.rows.length);
+  })();
+
+  // One Gantt row: fixed label column + timeline with bars packed into lanes
+  const LANE_H = 30;
+  const renderGanttRow = row => {
+    const { items, lanes } = packLanes(row.tasks);
+    const rowH = lanes * LANE_H + 10;
+    return (
+      <div key={row.key} style={{display:"flex", borderTop:"1px solid var(--border-subtle)", minHeight:40}}>
+        {/* Fixed label column */}
+        <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:10, color:"var(--text-dim)", fontStyle: row.muted ? "italic" : "normal", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--bg)", zIndex:3}}>
+          {row.dot && <div style={{width:7, height:7, borderRadius:2, background:row.dot, flexShrink:0}} />}
+          <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}} title={row.label}>{row.label}</span>
+        </div>
+        {/* Timeline area */}
+        <div style={{width:sharedTimelineW, height:rowH, position:"relative"}}>
+          {/* Column stripes */}
+          {ganttColPositions.map((cp, i) => {
+            const isWE = granularity === 'day' && (cp.date.getDay() === 0 || cp.date.getDay() === 6);
+            return (isWE || i%2===0) ? (
+              <div key={i} style={{position:"absolute", top:0, bottom:0, left:cp.left, width:cp.width,
+                background: isWE ? "var(--weekend-bg)" : "var(--row-alt)"}} />
+            ) : null;
+          })}
+          {/* Today line */}
+          {todayLeft!==null && (
+            <div style={{position:"absolute", top:0, bottom:0, left:todayLeft, width:1, background:"rgba(239,68,68,0.5)", zIndex:2}} />
+          )}
+          {items.map(({ task, lane }) => {
+            const col = pColors[task.projectName]||"#3B82F6";
+            const bs  = barStyle(task);
+            const pct = (task.completion != null && task.completion > 0) ? Math.min(100, task.completion) : 0;
+            const top = 8 + lane * LANE_H;
+            return (
+              <React.Fragment key={task.id}>
+                {/* Completion strip */}
+                {pct > 0 && <>
+                  <div style={{position:"absolute", left:bs.left, width:bs.width, height:3, top:top+23, background:"var(--progress-track)", borderRadius:2, zIndex:2}} />
+                  <div style={{position:"absolute", left:bs.left, width:`${parseFloat(bs.width)*pct/100}px`, height:3, top:top+23, background:"var(--progress-fill)", borderRadius:2, zIndex:3}} />
+                </>}
+                {/* Gantt bar */}
+                <div
+                  onClick={() => { if (!lastDragMovedRef.current) openEditModal(task); lastDragMovedRef.current = false; }}
+                  onMouseDown={e => {
+                    if (e.button !== 0) return;
+                    e.preventDefault();
+                    dragRef.current = { taskId:task.id, startX:e.clientX, origStart:task.startDate, origEnd:task.endDate, el:e.currentTarget, deltaDays:0, snap:{resources, pColors, milestones} };
+                    e.currentTarget.style.opacity = "0.75";
+                    document.body.style.cursor = "grabbing";
+                    document.body.style.userSelect = "none";
+                  }}
+                  title={(() => {
+                    const names = (task.resourceIds||[]).map(id=>resources.find(r=>r.id===id)?.name).filter(Boolean).join(", ");
+                    const days = Math.round((parseDate(task.endDate) - parseDate(task.startDate)) / 86400000) + 1;
+                    const dur = days >= 14 ? `${Math.round(days/7)} weeks` : `${days} day${days!==1?"s":""}`;
+                    return [
+                      task.taskName,
+                      task.projectName,
+                      `${task.startDate} → ${task.endDate}  (${dur})`,
+                      names ? `Resources: ${names}` : null,
+                      task.completion > 0 ? `${task.completion}% complete` : null,
+                      task.notes ? `\n${task.notes}` : null,
+                    ].filter(Boolean).join("\n");
+                  })()}
+                  style={{
+                    position:"absolute", ...bs, top,
+                    height:24, borderRadius:5,
+                    background:col, opacity:0.92,
+                    display:"flex", alignItems:"center", padding:"0 8px",
+                    fontSize:10, color:"#fff", fontWeight:600,
+                    overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis",
+                    cursor:"grab", zIndex:1,
+                    boxShadow:"0 0 0 1px rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.4)"
+                  }}
+                >
+                  {task.taskName}
+                  {task.notes && (
+                    <div style={{position:"absolute", top:3, right:4, width:5, height:5, borderRadius:"50%", background:"#fff", opacity:0.6, flexShrink:0}} />
+                  )}
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   // ── render ────────────────────────────────────────────────────────────────
   return (
     <div style={S.app}>
@@ -930,12 +1073,20 @@ function App() {
               {/* ── GANTT ────────────────────────────────────────────────── */}
               {(view==="gantt"||view==="both") && (
                 <div>
-                  <div style={S.sectionTitle}>GANTT — IMPLEMENTATION TIMELINE</div>
+                  <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:10, flexWrap:"wrap"}}>
+                    <div style={{...S.sectionTitle, marginBottom:0}}>GANTT — IMPLEMENTATION TIMELINE</div>
+                    <div className="no-print" style={{display:"flex", alignItems:"center", gap:6}}>
+                      <span style={{fontSize:10, color:"var(--text-dimmer)", fontWeight:600, letterSpacing:"0.08em"}}>GROUP BY</span>
+                      {[["resource","Resource"],["project","Project"]].map(([g, lbl]) => (
+                        <button key={g} style={{...S.btn(groupBy===g), padding:"3px 10px", fontSize:11}} onClick={() => changeGroupBy(g)}>{lbl}</button>
+                      ))}
+                    </div>
+                  </div>
                   <div style={S.sectionBox}>
 
                     {/* Sticky column header */}
                     <div style={{display:"flex", borderBottom:"1px solid var(--border)", background:"var(--surface-2)", position:"sticky", top:0, zIndex:10}}>
-                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>Resource / Task</div>
+                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>{groupBy==="project" ? "Project / Resource" : "Resource / Task"}</div>
                       <div style={{flex:1, overflow:"clip"}}>
                         <div ref={ganttHeaderRef} style={{display:"flex"}}>
                           {ganttColPositions.map((col, i) => {
@@ -979,101 +1130,23 @@ function App() {
                           );
                         })}
 
-                        {/* Resource rows */}
-                        {resources.filter(res => !filterResource || res.id === filterResource).map(res => {
-                          const resTasks = tasks.filter(t=>t.resourceIds.includes(res.id) && (!filterProject || t.projectName===filterProject));
-                          if (!resTasks.length) return null;
-                          return (
-                            <div key={res.id}>
-                              {/* Resource header row */}
-                              <div style={{display:"flex", background:"var(--surface-3)", borderTop:"1px solid var(--border)"}}>
-                                <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:11, fontWeight:700, color:"var(--text-muted)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--surface-3)", zIndex:3}}>
-                                  {res.name}
-                                  <span style={{background:resTasks.length>=3?"#7F1D1D":resTasks.length===2?"#78350F":"#1E3A5F", color:resTasks.length>=3?"#FCA5A5":resTasks.length===2?"#FDE68A":"#93C5FD", borderRadius:9, padding:"1px 6px", fontSize:9, fontWeight:700}}>
-                                    {resTasks.length}
-                                  </span>
-                                </div>
-                                <div style={{width:sharedTimelineW}} />
+                        {/* Group rows (by resource or by project) */}
+                        {ganttGroups.map(g => (
+                          <div key={g.key}>
+                            {/* Group header row */}
+                            <div style={{display:"flex", background:"var(--surface-3)", borderTop:"1px solid var(--border)"}}>
+                              <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:11, fontWeight:700, color:"var(--text-muted)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--surface-3)", zIndex:3}}>
+                                {g.color && <div style={{width:8, height:8, borderRadius:2, background:g.color, flexShrink:0}} />}
+                                <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}} title={g.name}>{g.name}</span>
+                                <span title={g.badgeTitle} style={{flexShrink:0, borderRadius:9, padding:"1px 6px", fontSize:9, fontWeight:700, ...g.badgeStyle}}>
+                                  {g.badge}
+                                </span>
                               </div>
-
-                              {/* Task rows */}
-                              {resTasks.map(task => {
-                                const col = pColors[task.projectName]||"#3B82F6";
-                                const bs  = barStyle(task);
-                                const pct = (task.completion != null && task.completion > 0) ? Math.min(100, task.completion) : 0;
-                                return (
-                                  <div key={task.id} style={{display:"flex", borderTop:"1px solid var(--border-subtle)", minHeight:40}}>
-                                    {/* Fixed label column */}
-                                    <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:10, color:"var(--text-dim)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--bg)", zIndex:3}}>
-                                      <div style={{width:7, height:7, borderRadius:2, background:col, flexShrink:0}} />
-                                      <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{task.taskName}</span>
-                                    </div>
-                                    {/* Timeline area */}
-                                    <div style={{width:sharedTimelineW, position:"relative", display:"flex", alignItems:"center"}}>
-                                      {/* Column stripes */}
-                                      {ganttColPositions.map((cp, i) => {
-                                        const isWE = granularity === 'day' && (cp.date.getDay() === 0 || cp.date.getDay() === 6);
-                                        return (isWE || i%2===0) ? (
-                                          <div key={i} style={{position:"absolute", top:0, bottom:0, left:cp.left, width:cp.width,
-                                            background: isWE ? "var(--weekend-bg)" : "var(--row-alt)"}} />
-                                        ) : null;
-                                      })}
-                                      {/* Today line */}
-                                      {todayLeft!==null && (
-                                        <div style={{position:"absolute", top:0, bottom:0, left:todayLeft, width:1, background:"rgba(239,68,68,0.5)", zIndex:2}} />
-                                      )}
-                                      {/* Completion strip */}
-                                      {pct > 0 && <>
-                                        <div style={{position:"absolute", left:bs.left, width:bs.width, height:3, bottom:6, background:"var(--progress-track)", borderRadius:2, zIndex:2}} />
-                                        <div style={{position:"absolute", left:bs.left, width:`${parseFloat(bs.width)*pct/100}px`, height:3, bottom:6, background:"var(--progress-fill)", borderRadius:2, zIndex:3}} />
-                                      </>}
-                                      {/* Gantt bar */}
-                                      <div
-                                        onClick={() => { if (!lastDragMovedRef.current) openEditModal(task); lastDragMovedRef.current = false; }}
-                                        onMouseDown={e => {
-                                          if (e.button !== 0) return;
-                                          e.preventDefault();
-                                          dragRef.current = { taskId:task.id, startX:e.clientX, origStart:task.startDate, origEnd:task.endDate, el:e.currentTarget, deltaDays:0, snap:{resources, pColors, milestones} };
-                                          e.currentTarget.style.opacity = "0.75";
-                                          document.body.style.cursor = "grabbing";
-                                          document.body.style.userSelect = "none";
-                                        }}
-                                        title={(() => {
-                                          const names = (task.resourceIds||[]).map(id=>resources.find(r=>r.id===id)?.name).filter(Boolean).join(", ");
-                                          const days = Math.round((parseDate(task.endDate) - parseDate(task.startDate)) / 86400000) + 1;
-                                          const dur = days >= 14 ? `${Math.round(days/7)} weeks` : `${days} day${days!==1?"s":""}`;
-                                          return [
-                                            task.taskName,
-                                            task.projectName,
-                                            `${task.startDate} → ${task.endDate}  (${dur})`,
-                                            names ? `Resources: ${names}` : null,
-                                            task.completion > 0 ? `${task.completion}% complete` : null,
-                                            task.notes ? `\n${task.notes}` : null,
-                                          ].filter(Boolean).join("\n");
-                                        })()}
-                                        style={{
-                                          position:"absolute", ...bs,
-                                          height:24, borderRadius:5,
-                                          background:col, opacity:0.92,
-                                          display:"flex", alignItems:"center", padding:"0 8px",
-                                          fontSize:10, color:"#fff", fontWeight:600,
-                                          overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis",
-                                          cursor:"grab", zIndex:1,
-                                          boxShadow:"0 0 0 1px rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.4)"
-                                        }}
-                                      >
-                                        {task.taskName}
-                                        {task.notes && (
-                                          <div style={{position:"absolute", top:3, right:4, width:5, height:5, borderRadius:"50%", background:"#fff", opacity:0.6, flexShrink:0}} />
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                              <div style={{width:sharedTimelineW}} />
                             </div>
-                          );
-                        })}
+                            {g.rows.map(row => renderGanttRow(row))}
+                          </div>
+                        ))}
                       </div>
                     </div>
 
