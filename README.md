@@ -31,7 +31,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Group by Resource / Project** | Toggle the Gantt between person → tasks and project → people involved; overlapping bars stack in lanes, choice saved in localStorage |
 | **Day / Week / Month zoom** | Switch timeline granularity — day view shows weekends dimmed, week view shows ISO week numbers (W19…), month view gives a bird's-eye overview |
 | **Capacity Heatmap** | Derived automatically from Gantt — resource × week grid showing weekly load as % of capacity (task effort × working days), blue → amber → red |
-| **Effort %** | Optional share of a person's time per task (100 / 50 / 20 % or custom) — a permanent 20 % help-desk duty no longer counts like a full-time project. New tasks inherit the effort of the last task in the same project |
+| **Effort %** | Optional share of a person's time per task (100 / 50 / 20 % or custom) — a permanent 20 % help-desk duty no longer counts like a full-time project. New tasks inherit the effort of the last task in the same project. Tasks under 50 % are drawn as light, slimmer bars |
 | **Resource & Project filters** | Focus either view on one person or one project — filters compose, heatmap always shows real total load |
 | **Multi-resource tasks** | Assign a task to multiple people — load propagates to each resource in both views |
 | **Milestone markers** | Vertical overlays on the Gantt with custom label and colour — go-live dates, UAT freezes, deployment windows |

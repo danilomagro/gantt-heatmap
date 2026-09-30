@@ -35,6 +35,10 @@ Board data under key `pm-gantt-v2`:
 - Keep task creation light: only name, project, people, dates are visible; optional fields live under "More options" and new tasks inherit effort from the project's latest task.
 - Share links encode the board as base64url JSON in `#board=…`; the app then shows a non-saving preview with "Import to my board".
 
+## Bar visual language
+
+Solid bar = committed work; light tinted slimmer bar (`LIGHT_BELOW` 50 %) = background duty; diagonal stripes + dashed outline = tentative; grey hatch over the timeline = time off. Keep new states distinguishable from these.
+
 ## Typography
 
 Target is a 1920×1080 office monitor at 100% Windows scaling. Minimum text 11px (10px only for day-view column headers); primary labels 12–13px; no 700/800 weights below 12px.

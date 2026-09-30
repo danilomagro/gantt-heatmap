@@ -174,6 +174,7 @@ function getISOWeek(d) {
 // allocation = share of a person's time the task takes (1–100 %, missing = 100)
 const ALLOC_PRESETS = [100, 50, 20];
 const allocOf = t => (t.allocation > 0 ? Math.min(100, t.allocation) : 100);
+const LIGHT_BELOW = 50;                    // effort under this → light "background duty" bar
 const clampAlloc = v => Math.min(100, Math.max(1, parseInt(v) || 100));
 function workingDays(from, to) {           // Mon–Fri count, inclusive
   let n = 0;
@@ -835,13 +836,14 @@ function App() {
             const col = pColors[task.projectName]||"#3B82F6";
             const bs  = barStyle(task);
             const pct = (task.completion != null && task.completion > 0) ? Math.min(100, task.completion) : 0;
-            const top = 9 + lane * LANE_H;
+            const light = allocOf(task) < LIGHT_BELOW;
+            const top = 9 + lane * LANE_H + (light ? 2 : 0);
             return (
               <React.Fragment key={task.id}>
                 {/* Completion strip */}
                 {pct > 0 && <>
-                  <div style={{position:"absolute", left:bs.left, width:bs.width, height:3, top:top+25, background:"var(--progress-track)", borderRadius:2, zIndex:2}} />
-                  <div style={{position:"absolute", left:bs.left, width:`${parseFloat(bs.width)*pct/100}px`, height:3, top:top+25, background:"var(--progress-fill)", borderRadius:2, zIndex:3}} />
+                  <div style={{position:"absolute", left:bs.left, width:bs.width, height:3, top:top+(light ? 21 : 25), background:"var(--progress-track)", borderRadius:2, zIndex:2}} />
+                  <div style={{position:"absolute", left:bs.left, width:`${parseFloat(bs.width)*pct/100}px`, height:3, top:top+(light ? 21 : 25), background:"var(--progress-fill)", borderRadius:2, zIndex:3}} />
                 </>}
                 {/* Gantt bar */}
                 <div
@@ -879,21 +881,22 @@ function App() {
                   })()}
                   style={{
                     position:"absolute", ...bs, top,
-                    height:26, borderRadius:5,
-                    background:col, opacity:0.92,
-                    display:"flex", alignItems:"center", padding:"0 8px",
-                    fontSize:12, color:"#fff", fontWeight:600,
+                    height: light ? 22 : 26, borderRadius:5,
+                    background: light ? `${col}33` : col, opacity:0.92,
+                    border: light ? `1px solid ${col}` : "none", borderLeft: light ? `4px solid ${col}` : "none",
+                    display:"flex", alignItems:"center", padding: light ? "0 8px 0 5px" : "0 8px",
+                    fontSize:12, color: light ? "var(--text)" : "#fff", fontWeight:600,
                     overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis",
                     cursor:"grab", zIndex:1,
-                    boxShadow:"0 0 0 1px rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.4)"
+                    boxShadow: light ? "none" : "0 0 0 1px rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.4)"
                   }}
                 >
                   {task.taskName}
                   {allocOf(task) < 100 && (
-                    <span style={{marginLeft:6, padding:"0 5px", borderRadius:8, background:"rgba(0,0,0,0.28)", fontSize:11, fontWeight:600, flexShrink:0}}>{allocOf(task)}%</span>
+                    <span style={{marginLeft:6, padding:"0 5px", borderRadius:8, background: light ? col : "rgba(0,0,0,0.28)", color:"#fff", fontSize:11, fontWeight:600, flexShrink:0}}>{allocOf(task)}%</span>
                   )}
                   {task.notes && (
-                    <div style={{position:"absolute", top:3, right:4, width:5, height:5, borderRadius:"50%", background:"#fff", opacity:0.6, flexShrink:0}} />
+                    <div style={{position:"absolute", top:3, right:4, width:5, height:5, borderRadius:"50%", background: light ? col : "#fff", opacity: light ? 0.9 : 0.6, flexShrink:0}} />
                   )}
                 </div>
               </React.Fragment>
