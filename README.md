@@ -38,6 +38,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Task notes** | Optional free-text notes per task, visible on hover, with a subtle dot indicator on the bar |
 | **Completion %** | Optional progress field per task — thin strip below the Gantt bar, high-contrast colour |
 | **Drag & drop rescheduling** | Drag bars left/right to shift task dates, or drag either edge to change start/end; click without moving still opens edit |
+| **Tentative tasks** | Mark unconfirmed work as tentative — striped, dashed bars. Hide / Show / Count toggle: shown but not counted by default (heatmap cells flag the extra load with a dashed outline), or counted for a what-if view. One-click ✓ Confirm |
 | **Light / Dark theme** | Toggle between themes, preference saved in localStorage |
 | **Share link** | Encode the whole board in a URL — recipients open it without touching their own data (changes aren't saved) and can import it into their board with one click |
 | **Clear board** | Wipe all data in one step (with confirmation) to start fresh |
