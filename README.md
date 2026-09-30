@@ -1,5 +1,10 @@
 # ◈ PM WORKLOAD BOARD
 
+[![Live demo](https://img.shields.io/badge/demo-live-2563EB)](https://danilomagro.github.io/gantt-heatmap/pm-workload-board.html)
+[![License: MIT](https://img.shields.io/badge/license-MIT-06D6A0)](LICENSE)
+![No build step](https://img.shields.io/badge/build-none%20needed-FFB703)
+[![Built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-D97757)](https://claude.com/claude-code)
+
 > *"If the team looks slow, show them the bars. If they still don't believe you, show them the heatmap."*
 
 **[→ Open live version](https://danilomagro.github.io/gantt-heatmap/pm-workload-board.html)**
@@ -33,6 +38,8 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Completion %** | Optional progress field per task — thin strip below the Gantt bar, high-contrast colour |
 | **Drag & drop rescheduling** | Drag bars left/right to shift task dates; click without moving still opens edit |
 | **Light / Dark theme** | Toggle between themes, preference saved in localStorage |
+| **Share link** | Encode the whole board in a URL — recipients open it without touching their own data (changes aren't saved) and can import it into their board with one click |
+| **Clear board** | Wipe all data in one step (with confirmation) to start fresh |
 | **Export / Import JSON** | Full data portability — sync between devices or share snapshots with your team |
 | **Print / PDF export** | Browser print dialog, landscape layout, sidebar hidden, colours preserved |
 | **Synchronized horizontal scroll** | Both views scroll in sync when tasks span many weeks; resource column stays fixed |
@@ -97,6 +104,8 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Typography pass — minimum 11px text, 12–13px primary labels (Fluent 2 / Material 3 scale), taller Gantt bars; much sharper on 1080p monitors
+- [x] Share link — board encoded in URL, opens as a non-saving preview with "Import to my board"
 - [x] Gantt grouping toggle — group by resource or by project (people involved per project, unassigned tasks shown separately)
 - [x] Day / Week / Month granularity toggle — switch timeline zoom; ISO week numbers (W19, W20…) in week view; weekend columns dimmed in day view; preference saved in localStorage
 
@@ -104,7 +113,6 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 
 | Priority | Item |
 |---|---|
-| Medium | Read-only share link — encode board as URL fragment, open in view-only mode |
 | Medium | Print layout optimisation for large datasets — auto-scale or date range selector |
 
 ---

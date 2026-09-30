@@ -17,3 +17,6 @@ $RECYCLE.BIN/
 # Local backups
 *.bak
 pm-workload-backup*.json
+
+# Claude Code local state
+.claude/
