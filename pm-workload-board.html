@@ -19,6 +19,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   [data-theme="dark"] {
+    --off-stripe:       rgba(148,163,184,0.30);   /* time-off hatch */
     --bg:               #0A0F1E;
     --surface:          #111827;
     --surface-2:        #0F172A;
@@ -52,6 +53,7 @@
   }
 
   [data-theme="light"] {
+    --off-stripe:       rgba(71,85,105,0.22);     /* time-off hatch */
     --bg:               #F8FAFC;
     --surface:          #FFFFFF;
     --surface-2:        #E2E8F0;
@@ -143,7 +145,7 @@
 
 const COLORS = ["#E84855","#3A86FF","#06D6A0","#FFB703","#8338EC","#FF6B35","#4ECDC4","#A78BFA","#F472B6","#34D399"];
 const MILESTONE_COLORS = ["#F59E0B","#EF4444","#06D6A0","#3A86FF","#A78BFA"];
-const SAMPLE_DATA = {"t":[{"id":"1700001001000","taskName":"Backend integration","projectName":"ERP Migration","resourceIds":["1700000001000","1700000003000"],"startDate":"2026-04-20","endDate":"2026-05-08","notes":"Blocked by missing DB credentials from client IT — follow up Thursday"},{"id":"1700001005000","taskName":"Frontend integration","projectName":"ERP Migration","resourceIds":["1700000002000"],"startDate":"2026-04-27","endDate":"2026-06-12","notes":"Coordinate with John — depends on backend endpoints being ready by 09 May"},{"id":"1700001008000","taskName":"ETL pipelines","projectName":"Data Warehouse","resourceIds":["1700000003000"],"startDate":"2026-05-11","endDate":"2026-06-26","notes":"Waiting for data modeling sign-off before starting. Source system access TBC."},{"id":"1700001011000","taskName":"QA & regression testing","projectName":"Customer Portal","resourceIds":["1700000002000"],"startDate":"2026-05-18","endDate":"2026-06-19","notes":"Test plan ready. Needs staging environment — chasing Marco for deployment."},{"id":"1700001013000","taskName":"Performance optimisation","projectName":"API Gateway","resourceIds":["1700000001000"],"startDate":"2026-06-15","endDate":"2026-07-10","notes":"Target p99 latency < 80ms. Profile with k6 first, then tune connection pooling.","tentative":true},{"id":"1700001014000","taskName":"Mobile screen implementation","projectName":"Mobile App Redesign","resourceIds":["1700000002000"],"startDate":"2026-06-08","endDate":"2026-08-07","notes":"React Native build. Polish pass and handoff QA to follow before release."},{"id":"1700001015000","taskName":"Dashboards & reporting","projectName":"Data Warehouse","resourceIds":["1700000003000","1700000001000"],"startDate":"2026-07-06","endDate":"2026-08-07","notes":"BI layer on top of ETL output. Stakeholder review scheduled mid-July."},{"id":"1700001016000","taskName":"Help-desk rotation","projectName":"Help Desk","resourceIds":["1700000001000","1700000002000","1700000003000"],"startDate":"2026-04-20","endDate":"2026-08-14","allocation":20,"notes":"Permanent support duty — about one day a week each."}],"r":[{"id":"1700000001000","name":"John"},{"id":"1700000002000","name":"Sarah"},{"id":"1700000003000","name":"Marco"}],"m":[{"id":"1700002001000","name":"ERP Go-Live","date":"2026-05-11","color":"#F59E0B"},{"id":"1700002002000","name":"UAT Freeze","date":"2026-06-15","color":"#3A86FF"},{"id":"1700002003000","name":"Mobile Release","date":"2026-08-10","color":"#A78BFA"}],"c":{"ERP Migration":"#E84855","API Gateway":"#3A86FF","Data Warehouse":"#06D6A0","Customer Portal":"#FFB703","Mobile App Redesign":"#8338EC","Help Desk":"#4ECDC4"}};
+const SAMPLE_DATA = {"t":[{"id":"1700001001000","taskName":"Backend integration","projectName":"ERP Migration","resourceIds":["1700000001000","1700000003000"],"startDate":"2026-04-20","endDate":"2026-05-08","notes":"Blocked by missing DB credentials from client IT — follow up Thursday"},{"id":"1700001005000","taskName":"Frontend integration","projectName":"ERP Migration","resourceIds":["1700000002000"],"startDate":"2026-04-27","endDate":"2026-06-12","notes":"Coordinate with John — depends on backend endpoints being ready by 09 May"},{"id":"1700001008000","taskName":"ETL pipelines","projectName":"Data Warehouse","resourceIds":["1700000003000"],"startDate":"2026-05-11","endDate":"2026-06-26","notes":"Waiting for data modeling sign-off before starting. Source system access TBC."},{"id":"1700001011000","taskName":"QA & regression testing","projectName":"Customer Portal","resourceIds":["1700000002000"],"startDate":"2026-05-18","endDate":"2026-06-19","notes":"Test plan ready. Needs staging environment — chasing Marco for deployment."},{"id":"1700001013000","taskName":"Performance optimisation","projectName":"API Gateway","resourceIds":["1700000001000"],"startDate":"2026-06-15","endDate":"2026-07-10","notes":"Target p99 latency < 80ms. Profile with k6 first, then tune connection pooling.","tentative":true},{"id":"1700001014000","taskName":"Mobile screen implementation","projectName":"Mobile App Redesign","resourceIds":["1700000002000"],"startDate":"2026-06-08","endDate":"2026-08-07","notes":"React Native build. Polish pass and handoff QA to follow before release."},{"id":"1700001015000","taskName":"Dashboards & reporting","projectName":"Data Warehouse","resourceIds":["1700000003000","1700000001000"],"startDate":"2026-07-06","endDate":"2026-08-07","notes":"BI layer on top of ETL output. Stakeholder review scheduled mid-July."},{"id":"1700001016000","taskName":"Help-desk rotation","projectName":"Help Desk","resourceIds":["1700000001000","1700000002000","1700000003000"],"startDate":"2026-04-20","endDate":"2026-08-14","allocation":20,"notes":"Permanent support duty — about one day a week each."}],"r":[{"id":"1700000001000","name":"John"},{"id":"1700000002000","name":"Sarah"},{"id":"1700000003000","name":"Marco"}],"m":[{"id":"1700002001000","name":"ERP Go-Live","date":"2026-05-11","color":"#F59E0B"},{"id":"1700002002000","name":"UAT Freeze","date":"2026-06-15","color":"#3A86FF"},{"id":"1700002003000","name":"Mobile Release","date":"2026-08-10","color":"#A78BFA"}],"c":{"ERP Migration":"#E84855","API Gateway":"#3A86FF","Data Warehouse":"#06D6A0","Customer Portal":"#FFB703","Mobile App Redesign":"#8338EC","Help Desk":"#4ECDC4"},"o":[{"id":"1700003001000","resourceId":"1700000002000","startDate":"2026-08-03","endDate":"2026-08-14","label":"Summer holiday"},{"id":"1700003002000","resourceId":"1700000001000","startDate":"2026-05-25","endDate":"2026-05-29","label":"Holiday"}]};
 const STORAGE_KEY = "pm-gantt-v2";
 const THEME_KEY   = "pm-gantt-theme";
 const GRAN_KEY    = "pm-gantt-gran";
@@ -177,11 +179,7 @@ const ALLOC_PRESETS = [100, 50, 20];
 const allocOf = t => (t.allocation > 0 ? Math.min(100, t.allocation) : 100);
 const LIGHT_BELOW = 50;                    // effort under this → light "background duty" bar
 const clampAlloc = v => Math.min(100, Math.max(1, parseInt(v) || 100));
-function workingDays(from, to) {           // Mon–Fri count, inclusive
-  let n = 0;
-  for (let d = new Date(from); d <= to; d = addDays(d, 1)) { const w = d.getDay(); if (w !== 0 && w !== 6) n++; }
-  return n;
-}
+const OFF_HATCH = "repeating-linear-gradient(45deg, var(--off-stripe) 0 5px, transparent 5px 10px)";
 // Heat level from weekly load in % of capacity. With every task at 100 % this
 // reproduces the original 1 / 2 / 3 / 4+ parallel-task scale.
 const LOAD_STEPS = [100, 200, 300];
@@ -202,9 +200,9 @@ function normalizeTasks(rawTasks) {
 }
 
 // ── URL share encoding (UTF-8 safe base64-url) ────────────────────────────
-function encodeBoard(t, r, c, m) {
+function encodeBoard(t, r, c, m, o) {
   try {
-    const json = JSON.stringify({t, r, c, m});
+    const json = JSON.stringify({t, r, c, m, o});
     const bytes = new TextEncoder().encode(json);
     let bin = ""; bytes.forEach(b => bin += String.fromCharCode(b));
     return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
@@ -227,6 +225,9 @@ function App() {
   const [resources, setResources] = React.useState([]);
   const [pColors, setPColors] = React.useState({});
   const [milestones, setMilestones] = React.useState([]);
+  const [timeOff, setTimeOff] = React.useState([]);          // [{id, resourceId, startDate, endDate, label}]
+  const [oForm, setOForm] = React.useState({ resourceId:"", startDate:"", endDate:"", label:"" });
+  const [offOpen, setOffOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-offOpen") === "1"; } catch { return false; } });
   const [theme, setTheme] = React.useState(() => {
     try { return localStorage.getItem(THEME_KEY) || "dark"; } catch { return "dark"; }
   });
@@ -330,31 +331,34 @@ function App() {
         const d = decodeBoard(hash.slice(7));
         if (d) {
           setSharedData(d); sharedRef.current = true;
-          setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]);
+          setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); setTimeOff(d.o||[]);
           return;
         }
       }
     } catch {}
     // Normal: load own data from localStorage
     const r = storage.get(STORAGE_KEY);
-    if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); } catch {} }
+    if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); setTimeOff(d.o||[]); } catch {} }
   }, []);
 
   // While previewing a shared board nothing is written — the viewer's own board stays intact
   const sharedRef = React.useRef(false);
-  const persist = (t, r, c, m) => { if (!sharedRef.current) storage.set(STORAGE_KEY, JSON.stringify({ t, r, c, m })); };
+  // Time off rides along with every save; handlers that change it pass it explicitly
+  const timeOffRef = React.useRef([]);
+  timeOffRef.current = timeOff;
+  const persist = (t, r, c, m, o = timeOffRef.current) => { if (!sharedRef.current) storage.set(STORAGE_KEY, JSON.stringify({ t, r, c, m, o })); };
 
   // ── undo ──────────────────────────────────────────────────────────────────
-  const saveUndo = (label, t, r, c, m) => {
+  const saveUndo = (label, t, r, c, m, o = timeOffRef.current) => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    setUndoSnapshot({ label, t, r, c, m });
+    setUndoSnapshot({ label, t, r, c, m, o });
     undoTimerRef.current = setTimeout(() => setUndoSnapshot(null), 5000);
   };
   const performUndo = () => {
     if (!undoSnapshot) return;
-    const { t, r, c, m } = undoSnapshot;
-    setTasks(t); setResources(r); setPColors(c); setMilestones(m);
-    persist(t, r, c, m);
+    const { t, r, c, m, o } = undoSnapshot;
+    setTasks(t); setResources(r); setPColors(c); setMilestones(m); setTimeOff(o||[]);
+    persist(t, r, c, m, o||[]);
     setUndoSnapshot(null);
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
   };
@@ -443,24 +447,44 @@ function App() {
   }, [weeks, dayW, sharedTimelineW]);
 
   // ── heatmap data (always weekly) ──────────────────────────────────────────
-  // Each cell: tasks touching the week, each with its share of the week (% of 5 working days × effort)
+  // Days off per person as a Set of "YYYY-MM-DD"
+  const offDays = React.useMemo(() => {
+    const m = {};
+    timeOff.forEach(o => {
+      const set = m[o.resourceId] || (m[o.resourceId] = new Set());
+      for (let d = parseDate(o.startDate); d <= parseDate(o.endDate); d = addDays(d, 1)) set.add(fmtDate(d));
+    });
+    return m;
+  }, [timeOff]);
+
+  // Each cell: load = Σ effort × days worked ÷ days available (Mon–Fri minus time off).
+  // Work doesn't happen on days off; a main task (≥ LIGHT_BELOW effort) falling on them is a conflict.
   const heatmap = React.useMemo(() => resources.map(res => ({
     res,
     cols: weeks.map(ws => {
       const we = addDays(ws,6);
+      const off = offDays[res.id];
+      const wdays = [];
+      for (let d = new Date(ws); d <= we; d = addDays(d, 1)) if (d.getDay() !== 0 && d.getDay() !== 6) wdays.push(fmtDate(d));
+      const daysOff = off ? wdays.filter(x => off.has(x)).length : 0;
+      const capacity = wdays.length - daysOff;
       const items = tasks
         .filter(t => t.resourceIds.includes(res.id) && parseDate(t.startDate)<=we && parseDate(t.endDate)>=ws)
         .map(task => {
-          const s = parseDate(task.startDate), e = parseDate(task.endDate);
-          const days = workingDays(s > ws ? s : ws, e < we ? e : we);
-          return { task, pct: allocOf(task) * days / 5 };
+          const tdays = wdays.filter(x => x >= task.startDate && x <= task.endDate);
+          const present = off ? tdays.filter(x => !off.has(x)).length : tdays.length;
+          const clash = tdays.length - present > 0 && allocOf(task) >= LIGHT_BELOW;
+          return { task, pct: capacity ? allocOf(task) * present / capacity : 0, clash };
         })
         .filter(x => !(x.task.tentative && tentMode === "hide"));
       const counted = items.filter(x => !x.task.tentative || tentMode === "count");
       const tentLoad = Math.round(items.filter(x => x.task.tentative).reduce((a, x) => a + x.pct, 0));
-      return { items: counted, tentItems: items.filter(x => x.task.tentative && tentMode === "show"), tentLoad, load: Math.round(counted.reduce((a, x) => a + x.pct, 0)) };
+      const offLabels = [...new Set(timeOff.filter(o => o.resourceId === res.id && o.startDate <= fmtDate(we) && o.endDate >= fmtDate(ws)).map(o => o.label || "Time off"))];
+      return { items: counted, tentItems: items.filter(x => x.task.tentative && tentMode === "show"), tentLoad,
+               load: Math.round(counted.reduce((a, x) => a + x.pct, 0)), daysOff, capacity, offLabels,
+               clashes: counted.filter(x => x.clash) };
     })
-  })), [resources, tasks, weeks, tentMode]);
+  })), [resources, tasks, weeks, tentMode, offDays, timeOff]);
 
   // ── data mutations ────────────────────────────────────────────────────────
   const assignColor = (projectName, current) => {
@@ -482,7 +506,8 @@ function App() {
     const t = tasks
       .map(x => ({ ...x, resourceIds: x.resourceIds.filter(rid => rid!==id) }))
       .filter(x => x.resourceIds.length > 0);
-    setResources(r); setTasks(t); persist(t, r, pColors, milestones);
+    const o = timeOff.filter(x => x.resourceId !== id);
+    setResources(r); setTasks(t); setTimeOff(o); persist(t, r, pColors, milestones, o);
   };
 
   const submitForm = () => {
@@ -547,7 +572,8 @@ function App() {
     setResources(SAMPLE_DATA.r);
     setPColors(SAMPLE_DATA.c);
     setMilestones(SAMPLE_DATA.m);
-    persist(SAMPLE_DATA.t, SAMPLE_DATA.r, SAMPLE_DATA.c, SAMPLE_DATA.m);
+    setTimeOff(SAMPLE_DATA.o);
+    persist(SAMPLE_DATA.t, SAMPLE_DATA.r, SAMPLE_DATA.c, SAMPLE_DATA.m, SAMPLE_DATA.o);
   };
 
   // ── keyboard shortcuts ────────────────────────────────────────────────────
@@ -612,9 +638,25 @@ function App() {
     setMilestones(m); persist(tasks, resources, pColors, m);
   };
 
+  // ── time off ──────────────────────────────────────────────────────────────
+  const addTimeOff = () => {
+    const resourceId = oForm.resourceId || resources[0]?.id;
+    if (!resourceId || !oForm.startDate) return;
+    const endDate = oForm.endDate && oForm.endDate >= oForm.startDate ? oForm.endDate : oForm.startDate;
+    const o = [...timeOff, { id: Date.now().toString(), resourceId, startDate: oForm.startDate, endDate, label: oForm.label.trim() }];
+    setTimeOff(o); persist(tasks, resources, pColors, milestones, o);
+    setOForm(f => ({ ...f, startDate:"", endDate:"", label:"" }));
+  };
+
+  const delTimeOff = id => {
+    saveUndo("Deleted time off", tasks, resources, pColors, milestones, timeOff);
+    const o = timeOff.filter(x => x.id !== id);
+    setTimeOff(o); persist(tasks, resources, pColors, milestones, o);
+  };
+
   // ── import / export ───────────────────────────────────────────────────────
   const exportJSON = () => {
-    const blob = new Blob([JSON.stringify({t:tasks,r:resources,c:pColors,m:milestones},null,2)], {type:"application/json"});
+    const blob = new Blob([JSON.stringify({t:tasks,r:resources,c:pColors,m:milestones,o:timeOff},null,2)], {type:"application/json"});
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
     a.download = "pm-workload-backup.json"; a.click();
   };
@@ -626,8 +668,8 @@ function App() {
       try {
         const d = JSON.parse(ev.target.result);
         if (!Array.isArray(d.t) || !Array.isArray(d.r)) { alert("Invalid file format."); return; }
-        setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]);
-        persist(d.t||[], d.r||[], d.c||{}, d.m||[]);
+        setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); setTimeOff(d.o||[]);
+        persist(d.t||[], d.r||[], d.c||{}, d.m||[], d.o||[]);
       } catch { alert("Invalid file"); }
     };
     reader.readAsText(file);
@@ -636,7 +678,7 @@ function App() {
 
   // ── share via URL ─────────────────────────────────────────────────────────
   const shareBoard = () => {
-    const encoded = encodeBoard(tasks, resources, pColors, milestones);
+    const encoded = encodeBoard(tasks, resources, pColors, milestones, timeOff);
     if (!encoded) return;
     const url = location.href.split("#")[0] + "#board=" + encoded;
     navigator.clipboard.writeText(url)
@@ -657,15 +699,15 @@ function App() {
     history.replaceState(null, "", location.href.split("#")[0]);
     // Reload own data from localStorage
     const r = storage.get(STORAGE_KEY);
-    if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); } catch {} }
-    else { setTasks([]); setResources([]); setPColors({}); setMilestones([]); }
+    if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); setTimeOff(d.o||[]); } catch {} }
+    else { setTasks([]); setResources([]); setPColors({}); setMilestones([]); setTimeOff([]); }
   };
 
   // ── clear board ───────────────────────────────────────────────────────────
   const clearBoard = () => {
     if (!window.confirm("Delete all tasks, resources and milestones?\nThis cannot be undone.")) return;
-    setTasks([]); setResources([]); setPColors({}); setMilestones([]);
-    persist([], [], {}, []);
+    setTasks([]); setResources([]); setPColors({}); setMilestones([]); setTimeOff([]);
+    persist([], [], {}, [], []);
   };
 
   // ── resize observer → keeps mainWidth current ─────────────────────────────
@@ -791,9 +833,9 @@ function App() {
       return visibleRes.map(res => {
         const resTasks = ganttTasks.filter(t => t.resourceIds.includes(res.id) && (!filterProject || t.projectName===filterProject));
         return {
-          key: res.id, name: res.name,
+          key: res.id, name: res.name, resId: res.id,
           badge: resTasks.length, badgeTitle: `${resTasks.length} task(s)`, badgeStyle: loadBadge(resTasks.length),
-          rows: resTasks.map(t => ({ key: t.id, label: t.taskName, dot: pColors[t.projectName]||"#3B82F6", tasks: [t] })),
+          rows: resTasks.map(t => ({ key: t.id, label: t.taskName, dot: pColors[t.projectName]||"#3B82F6", tasks: [t], resId: res.id })),
         };
       }).filter(g => g.rows.length);
     }
@@ -805,7 +847,7 @@ function App() {
       .map(p => {
         const pTasks = ganttTasks.filter(t => t.projectName===p);
         const rows = visibleRes
-          .map(res => ({ key: `${p}|${res.id}`, label: res.name, tasks: pTasks.filter(t => t.resourceIds.includes(res.id)) }))
+          .map(res => ({ key: `${p}|${res.id}`, label: res.name, resId: res.id, tasks: pTasks.filter(t => t.resourceIds.includes(res.id)) }))
           .filter(r => r.tasks.length);
         const unassigned = pTasks.filter(t => !t.resourceIds.some(id => resources.find(r => r.id === id)));
         if (unassigned.length && !filterResource) rows.push({ key: `${p}|-`, label: "Unassigned", muted: true, tasks: unassigned });
@@ -826,6 +868,19 @@ function App() {
     const x = e.clientX - rect.left;
     return x <= 7 ? "start" : x >= rect.width - 7 ? "end" : "move";
   };
+
+  // Time-off blocks for one person, positioned like bars. Drawn above bars so a clash is visible.
+  const renderTimeOff = (resId, withLabel) => timeOff.filter(o => o.resourceId === resId).map(o => {
+    const bs = barStyle(o);
+    return (
+      <div key={o.id} title={withLabel ? `${o.label || "Time off"}: ${o.startDate} → ${o.endDate}` : undefined}
+        style={{position:"absolute", top:0, bottom:0, ...bs, background:OFF_HATCH, zIndex: withLabel ? 1 : 2,
+                pointerEvents: withLabel ? "auto" : "none", borderLeft:"1px solid var(--off-stripe)", borderRight:"1px solid var(--off-stripe)",
+                display:"flex", alignItems:"center", overflow:"hidden", whiteSpace:"nowrap"}}>
+        {withLabel && <span style={{fontSize:11, fontWeight:600, color:"var(--text-dim)", padding:"0 6px"}}>🌴{parseFloat(bs.width) >= 90 ? ` ${o.label || "Time off"}` : ""}</span>}
+      </div>
+    );
+  });
 
   // One Gantt row: fixed label column + timeline with bars packed into lanes
   const LANE_H = 32;
@@ -853,6 +908,7 @@ function App() {
           {todayLeft!==null && (
             <div style={{position:"absolute", top:0, bottom:0, left:todayLeft, width:1, background:"rgba(239,68,68,0.5)", zIndex:2}} />
           )}
+          {row.resId && renderTimeOff(row.resId, false)}
           {items.map(({ task, lane }) => {
             const col = pColors[task.projectName]||"#3B82F6";
             const bs  = barStyle(task);
@@ -1088,6 +1144,40 @@ function App() {
               )}
             </div>
 
+            {/* TIME OFF — collapsible */}
+            <div>
+              <ColHdr label="TIME OFF" count={timeOff.length} open={offOpen} onToggle={() => setOffOpen(o=>{ const n=!o; try{localStorage.setItem("pm-gantt-offOpen",n?"1":"0");}catch{} return n; })} />
+              {offOpen && (
+                <div style={{marginTop:10}}>
+                  {resources.length === 0
+                    ? <span style={{fontSize:12, color:"var(--text-dimmer)"}}>Add resources first</span>
+                    : <>
+                      <select value={oForm.resourceId || resources[0].id} onChange={e=>setOForm({...oForm, resourceId:e.target.value})} style={{...S.input, marginBottom:5}}>
+                        {resources.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                      <div style={{display:"flex", gap:4, marginBottom:5}}>
+                        <input type="date" lang="en-GB" value={oForm.startDate} onChange={e=>setOForm({...oForm, startDate:e.target.value})} title="First day off" style={{...S.input, flex:1, minWidth:0, fontSize:12}} />
+                        <input type="date" lang="en-GB" value={oForm.endDate} onChange={e=>setOForm({...oForm, endDate:e.target.value})} title="Last day off (empty = single day)" style={{...S.input, flex:1, minWidth:0, fontSize:12}} />
+                      </div>
+                      <input value={oForm.label} onChange={e=>setOForm({...oForm, label:e.target.value})} onKeyDown={e=>e.key==="Enter"&&addTimeOff()} placeholder="Holiday, sick leave… (optional)" style={{...S.input, marginBottom:6}} />
+                      <button onClick={addTimeOff} style={{width:"100%", padding:"6px", borderRadius:6, border:"none", background:"var(--btn-bg)", color:"var(--text)", fontSize:12, fontWeight:600, cursor:"pointer", marginBottom:6}}>+ Add time off</button>
+                    </>}
+                  {[...timeOff].sort((a, b) => a.startDate.localeCompare(b.startDate)).map(o => (
+                    <div key={o.id} style={{display:"flex", alignItems:"center", gap:6, marginBottom:4}}>
+                      <div style={{width:14, height:16, borderRadius:2, background:OFF_HATCH, border:"1px solid var(--border)", flexShrink:0}} />
+                      <div style={{flex:1, minWidth:0}}>
+                        <div style={{fontSize:12, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>
+                          {resources.find(r => r.id === o.resourceId)?.name || "?"}{o.label ? ` · ${o.label}` : ""}
+                        </div>
+                        <div style={{fontSize:11, color:"var(--text-dimmer)"}}>{o.startDate === o.endDate ? o.startDate : `${o.startDate} → ${o.endDate}`}</div>
+                      </div>
+                      <button onClick={()=>delTimeOff(o.id)} style={{background:"none", border:"none", color:"var(--text-dimmer)", cursor:"pointer", fontSize:14, flexShrink:0}}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* NEW TASK / EDIT TASK */}
             <div>
               <div style={{...S.label, marginBottom:8}}>{form.id?"EDIT TASK":"NEW TASK"}</div>
@@ -1278,7 +1368,9 @@ function App() {
                                   {g.badge}
                                 </span>
                               </div>
-                              <div style={{width:sharedTimelineW}} />
+                              <div style={{width:sharedTimelineW, position:"relative"}}>
+                                {g.resId && renderTimeOff(g.resId, true)}
+                              </div>
                             </div>
                             {g.rows.map(row => renderGanttRow(row))}
                           </div>
@@ -1331,19 +1423,22 @@ function App() {
                           .map(({res,cols}) => (
                             <div key={res.id} style={{display:"flex", borderTop:"1px solid var(--border)"}}>
                               <div style={{width:LABEL_W, flexShrink:0, padding:"10px", fontSize:13, fontWeight:600, color:"var(--text-heatmap-res)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", position:"sticky", left:0, background:"var(--surface)", zIndex:1}}>{res.name}</div>
-                              {cols.map(({items, tentItems, tentLoad, load}, i) => {
+                              {cols.map(({items, tentItems, tentLoad, load, daysOff, capacity, offLabels, clashes}, i) => {
                                 const projItems = filterProject ? items.filter(x => x.task.projectName === filterProject) : items;
                                 const projLoad  = Math.round(projItems.reduce((a, x) => a + x.pct, 0));
                                 const lvl = loadLevel(load);
                                 const line = x => `• ${x.task.tentative ? "[tentative] " : ""}${x.task.taskName} (${x.task.projectName}) — ${Math.round(x.pct)}%` + (allocOf(x.task) < 100 && Math.round(x.pct) !== allocOf(x.task) ? ` (${allocOf(x.task)}% effort)` : "");
                                 const tentShown = tentLoad > 0 && tentMode !== "hide";
-                                const tooltip = items.length + tentItems.length === 0 ? "" : [
+                                const tooltip = items.length + tentItems.length === 0 && !daysOff ? "" : [
                                   `${res.name} · W${getISOWeek(weeks[i])}: ${load}% of capacity` + (tentMode === "show" && tentLoad > 0 ? ` (+${tentLoad}% tentative, not counted)` : ""),
                                   filterProject ? `${filterProject}: ${projLoad}%` : null,
+                                  daysOff ? `🌴 ${offLabels.join(", ")}: ${daysOff} day${daysOff>1?"s":""} off — capacity ${capacity}/5 days` : null,
+                                  ...clashes.map(x => `⚠ ${x.task.taskName} is scheduled during time off`),
                                   ...items.map(line),
                                   ...tentItems.map(line),
                                 ].filter(Boolean).join("\n");
-                                const text = filterProject ? `${projLoad}/${load}` : heatColW >= 60 ? `${load}%` : `${load}`;
+                                const warn = clashes.length ? "⚠ " : "";
+                                const text = capacity === 0 ? `${warn}OFF` : warn + (filterProject ? `${projLoad}/${load}` : heatColW >= 60 ? `${load}%` : `${load}`);
                                 return (
                                   <div key={i}
                                     title={tooltip}
@@ -1353,15 +1448,16 @@ function App() {
                                       display: "flex",
                                       alignItems: "center",
                                       justifyContent: "center",
-                                      background: heatBg(lvl),
+                                      backgroundColor: heatBg(lvl),
+                                      backgroundImage: daysOff ? OFF_HATCH : "none",
                                       borderRight: i<weeks.length-1 ? "1px solid var(--border-subtle)" : "",
                                       minHeight: 34,
                                       cursor: items.length + tentItems.length > 0 ? "pointer" : "default",
                                       outline: tentShown ? "2px dashed var(--text-dim)" : "none", outlineOffset: -4,
                                     }}
                                   >
-                                    {load>0 && heatColW >= 18 && (
-                                      <span style={{fontSize:Math.min(13, heatColW * 0.34), fontWeight:700, color:heatFg(lvl), letterSpacing:"-0.5px"}}>
+                                    {(load>0 || capacity===0 || clashes.length>0) && heatColW >= 18 && (
+                                      <span style={{fontSize:Math.min(13, heatColW * 0.34), fontWeight:700, color: capacity===0 ? "var(--text-dim)" : heatFg(lvl), letterSpacing:"-0.5px", whiteSpace:"nowrap"}}>
                                         {text}
                                       </span>
                                     )}
@@ -1382,6 +1478,12 @@ function App() {
                         <span style={{fontSize:11, color:"var(--text-dim)"}}>{n===0 ? "0" : n===4 ? `>${LOAD_STEPS[2]}%` : `≤${LOAD_STEPS[n-1]}%`}</span>
                       </div>
                     ))}
+                    {timeOff.length > 0 && (
+                      <div style={{display:"flex", alignItems:"center", gap:4, marginLeft:8}}>
+                        <div style={{width:18, height:18, borderRadius:3, background:OFF_HATCH, border:"1px solid var(--border)"}} />
+                        <span style={{fontSize:11, color:"var(--text-dim)"}}>time off (load is measured on days present · ⚠ task during time off)</span>
+                      </div>
+                    )}
                     {hasTentative && tentMode !== "hide" && (
                       <div style={{display:"flex", alignItems:"center", gap:4, marginLeft:8}}>
                         <div style={{width:18, height:18, borderRadius:3, outline:"2px dashed var(--text-dim)", outlineOffset:-4, border:"1px solid var(--border)"}} />

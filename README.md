@@ -38,6 +38,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Task notes** | Optional free-text notes per task, visible on hover, with a subtle dot indicator on the bar |
 | **Completion %** | Optional progress field per task — thin strip below the Gantt bar, high-contrast colour |
 | **Drag & drop rescheduling** | Drag bars left/right to shift task dates, or drag either edge to change start/end; click without moving still opens edit |
+| **Time off** | Log holidays or sick leave per person — hatched blocks on the Gantt, capacity reduced in the heatmap. Load is measured on the days a person is present (background duties pause); a main task scheduled during time off is flagged ⚠ |
 | **Tentative tasks** | Mark unconfirmed work as tentative — striped, dashed bars. Hide / Show / Count toggle: shown but not counted by default (heatmap cells flag the extra load with a dashed outline), or counted for a what-if view. One-click ✓ Confirm |
 | **Light / Dark theme** | Toggle between themes, preference saved in localStorage |
 | **Share link** | Encode the whole board in a URL — recipients open it without touching their own data (changes aren't saved) and can import it into their board with one click |
@@ -106,6 +107,7 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Time off — hatched blocks, capacity-aware heatmap, ⚠ clash warnings
 - [x] Tentative tasks — striped bars, Hide / Show / Count toggle, one-click confirm
 - [x] Low-effort tasks (< 50 %) drawn as light, slimmer bars
 - [x] Effort % per task + heatmap in % of capacity — optional fields folded under "More options" so adding a task stays four fields
