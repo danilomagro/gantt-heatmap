@@ -303,7 +303,7 @@ function App() {
       if (hash.startsWith("#board=")) {
         const d = decodeBoard(hash.slice(7));
         if (d) {
-          setSharedData(d);
+          setSharedData(d); sharedRef.current = true;
           setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]);
           return;
         }
@@ -314,7 +314,9 @@ function App() {
     if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); } catch {} }
   }, []);
 
-  const persist = (t, r, c, m) => storage.set(STORAGE_KEY, JSON.stringify({ t, r, c, m }));
+  // While previewing a shared board nothing is written — the viewer's own board stays intact
+  const sharedRef = React.useRef(false);
+  const persist = (t, r, c, m) => { if (!sharedRef.current) storage.set(STORAGE_KEY, JSON.stringify({ t, r, c, m })); };
 
   // ── undo ──────────────────────────────────────────────────────────────────
   const saveUndo = (label, t, r, c, m) => {
@@ -594,13 +596,14 @@ function App() {
 
   const importSharedBoard = () => {
     if (!window.confirm("This will overwrite your saved board with the shared one. Continue?")) return;
-    persist(tasks, resources, pColors, milestones); // current state IS the shared data
+    sharedRef.current = false;
+    persist(tasks, resources, pColors, milestones); // current state IS the shared data (incl. edits made in preview)
     setSharedData(null);
     history.replaceState(null, "", location.href.split("#")[0]);
   };
 
   const dismissSharedBoard = () => {
-    setSharedData(null);
+    setSharedData(null); sharedRef.current = false;
     history.replaceState(null, "", location.href.split("#")[0]);
     // Reload own data from localStorage
     const r = storage.get(STORAGE_KEY);
