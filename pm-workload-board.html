@@ -153,6 +153,7 @@ const GROUP_KEY   = "pm-gantt-group";
 const DAY_PX   = 38;           // day view:   38 px / day
 const WEEK_PX  = 80 / 7;       // week view:  80 px / week  → ~11.43 px/day
 const MONTH_PX = 120 / 30.44;  // month view: ~120 px / avg-month → ~3.94 px/day
+const LABEL_W  = 176;          // fixed label column (Gantt + heatmap)
 
 function parseDate(s) { return new Date(s + "T00:00:00"); }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
@@ -332,7 +333,7 @@ function App() {
 
   // ── weeks: always Monday-based (used for heatmap + timelineStart) ─────────
   const weeks = React.useMemo(() => {
-    const minW = Math.max(8, Math.ceil((mainWidth - 148) / (dayW * 7)));
+    const minW = Math.max(8, Math.ceil((mainWidth - LABEL_W) / (dayW * 7)));
     const ws = [];
     if (!tasks.length) {
       let cur = startOfMonday(new Date());
@@ -634,11 +635,11 @@ function App() {
     header:       { background:"var(--surface)", borderBottom:"1px solid var(--border)", padding:"10px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap" },
     aside:        { width:256, background:"var(--surface)", borderRight:"1px solid var(--border)", padding:"14px 12px", overflowY:"auto", flexShrink:0, display:"flex", flexDirection:"column", gap:16 },
     main:         { flex:1, overflowY:"auto", overflowX:"hidden", padding:"16px 20px", minWidth:0 },
-    label:        { fontSize:10, fontWeight:700, color:"var(--text-dimmer)", letterSpacing:"0.12em" },
-    input:        { width:"100%", padding:"7px 9px", borderRadius:6, border:"1px solid var(--border)", background:"var(--input-bg)", color:"var(--text)", fontSize:12, outline:"none" },
-    btn:          active => ({ padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer", fontSize:12, fontWeight:600, background:active?"#2563EB":"var(--btn-bg)", color:active?"#fff":"var(--btn-color)" }),
+    label:        { fontSize:11, fontWeight:600, color:"var(--text-dimmer)", letterSpacing:"0.12em" },
+    input:        { width:"100%", padding:"7px 9px", borderRadius:6, border:"1px solid var(--border)", background:"var(--input-bg)", color:"var(--text)", fontSize:13, outline:"none" },
+    btn:          active => ({ padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer", fontSize:13, fontWeight:600, background:active?"#2563EB":"var(--btn-bg)", color:active?"#fff":"var(--btn-color)" }),
     card:         { background:"var(--card-bg)", borderRadius:6, padding:"8px 10px", marginBottom:6 },
-    sectionTitle: { fontSize:11, fontWeight:700, color:"var(--text-dimmer)", letterSpacing:"0.1em", marginBottom:10 },
+    sectionTitle: { fontSize:12, fontWeight:700, color:"var(--text-dimmer)", letterSpacing:"0.1em", marginBottom:10 },
     sectionBox:   { background:"var(--surface)", borderRadius:10, border:"1px solid var(--border)", overflow:"clip" },
     colHdr:       { display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", userSelect:"none" },
   };
@@ -744,14 +745,14 @@ function App() {
   })();
 
   // One Gantt row: fixed label column + timeline with bars packed into lanes
-  const LANE_H = 30;
+  const LANE_H = 32;
   const renderGanttRow = row => {
     const { items, lanes } = packLanes(row.tasks);
-    const rowH = lanes * LANE_H + 10;
+    const rowH = lanes * LANE_H + 12;
     return (
-      <div key={row.key} style={{display:"flex", borderTop:"1px solid var(--border-subtle)", minHeight:40}}>
+      <div key={row.key} style={{display:"flex", borderTop:"1px solid var(--border-subtle)", minHeight:44}}>
         {/* Fixed label column */}
-        <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:10, color:"var(--text-dim)", fontStyle: row.muted ? "italic" : "normal", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--bg)", zIndex:3}}>
+        <div style={{width:LABEL_W, flexShrink:0, padding:"3px 10px", fontSize:12, color:"var(--text-dim)", fontStyle: row.muted ? "italic" : "normal", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--bg)", zIndex:3}}>
           {row.dot && <div style={{width:7, height:7, borderRadius:2, background:row.dot, flexShrink:0}} />}
           <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}} title={row.label}>{row.label}</span>
         </div>
@@ -773,13 +774,13 @@ function App() {
             const col = pColors[task.projectName]||"#3B82F6";
             const bs  = barStyle(task);
             const pct = (task.completion != null && task.completion > 0) ? Math.min(100, task.completion) : 0;
-            const top = 8 + lane * LANE_H;
+            const top = 9 + lane * LANE_H;
             return (
               <React.Fragment key={task.id}>
                 {/* Completion strip */}
                 {pct > 0 && <>
-                  <div style={{position:"absolute", left:bs.left, width:bs.width, height:3, top:top+23, background:"var(--progress-track)", borderRadius:2, zIndex:2}} />
-                  <div style={{position:"absolute", left:bs.left, width:`${parseFloat(bs.width)*pct/100}px`, height:3, top:top+23, background:"var(--progress-fill)", borderRadius:2, zIndex:3}} />
+                  <div style={{position:"absolute", left:bs.left, width:bs.width, height:3, top:top+25, background:"var(--progress-track)", borderRadius:2, zIndex:2}} />
+                  <div style={{position:"absolute", left:bs.left, width:`${parseFloat(bs.width)*pct/100}px`, height:3, top:top+25, background:"var(--progress-fill)", borderRadius:2, zIndex:3}} />
                 </>}
                 {/* Gantt bar */}
                 <div
@@ -807,10 +808,10 @@ function App() {
                   })()}
                   style={{
                     position:"absolute", ...bs, top,
-                    height:24, borderRadius:5,
+                    height:26, borderRadius:5,
                     background:col, opacity:0.92,
                     display:"flex", alignItems:"center", padding:"0 8px",
-                    fontSize:10, color:"#fff", fontWeight:600,
+                    fontSize:12, color:"#fff", fontWeight:600,
                     overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis",
                     cursor:"grab", zIndex:1,
                     boxShadow:"0 0 0 1px rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.4)"
@@ -835,7 +836,7 @@ function App() {
       <header style={S.header}>
         <div style={{display:"flex", alignItems:"baseline", gap:12}}>
           <span style={{fontWeight:800, fontSize:16, letterSpacing:"-0.5px", color:"var(--text-bright)"}}>PM Workload Board</span>
-          <span style={{fontFamily:"monospace", fontSize:11, color:"var(--text-faint)"}}>{tasks.length} tasks · {resources.length} resources</span>
+          <span style={{fontFamily:"monospace", fontSize:12, color:"var(--text-faint)"}}>{tasks.length} tasks · {resources.length} resources</span>
         </div>
         <div style={{display:"flex", gap:6, flexWrap:"wrap", alignItems:"center"}}>
           {/* View toggle */}
@@ -902,7 +903,7 @@ function App() {
                   {resources.length > 0 && (
                     <div style={{display:"flex", flexWrap:"wrap", gap:5, marginBottom:8}}>
                       {resources.map(r => (
-                        <div key={r.id} style={{display:"flex", alignItems:"center", gap:3, background:"var(--btn-bg)", border:"1px solid var(--border)", borderRadius:12, padding:"3px 6px 3px 10px", fontSize:11, color:"var(--text)"}}>
+                        <div key={r.id} style={{display:"flex", alignItems:"center", gap:3, background:"var(--btn-bg)", border:"1px solid var(--border)", borderRadius:12, padding:"3px 6px 3px 10px", fontSize:12, color:"var(--text)"}}>
                           <span>{r.name}</span>
                           <button onClick={() => delResource(r.id)} style={{background:"none", border:"none", color:"var(--text-dimmer)", cursor:"pointer", fontSize:14, lineHeight:1, padding:"0 2px", display:"flex", alignItems:"center"}}>×</button>
                         </div>
@@ -951,7 +952,7 @@ function App() {
                 {projects.map(p => (
                   <div key={p} style={{display:"flex", alignItems:"center", gap:7, marginBottom:4}}>
                     <div style={{width:10, height:10, borderRadius:2, background:pColors[p], flexShrink:0}} />
-                    <span style={{fontSize:11, color:"var(--text-muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p}</span>
+                    <span style={{fontSize:12, color:"var(--text-muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p}</span>
                   </div>
                 ))}
               </div>
@@ -963,7 +964,7 @@ function App() {
               {msOpen && (
                 <div style={{marginTop:10}}>
                   <input value={mForm.name} onChange={e=>setMForm({...mForm,name:e.target.value})} onKeyDown={e=>e.key==="Enter"&&addMilestone()} placeholder="Milestone name" style={{...S.input, marginBottom:5}} />
-                  <input type="date" lang="en-GB" value={mForm.date} onChange={e=>setMForm({...mForm,date:e.target.value})} style={{...S.input, marginBottom:6, fontSize:11}} />
+                  <input type="date" lang="en-GB" value={mForm.date} onChange={e=>setMForm({...mForm,date:e.target.value})} style={{...S.input, marginBottom:6, fontSize:12}} />
                   <div style={{display:"flex", gap:6, marginBottom:6, alignItems:"center"}}>
                     {MILESTONE_COLORS.map(col => (
                       <div key={col} onClick={() => setMForm({...mForm,color:col})} style={{width:18, height:18, borderRadius:"50%", background:col, cursor:"pointer", flexShrink:0, boxShadow:mForm.color===col?`0 0 0 2px var(--surface), 0 0 0 4px ${col}`:"none"}} />
@@ -974,8 +975,8 @@ function App() {
                     <div key={m.id} style={{display:"flex", alignItems:"center", gap:6, marginBottom:4}}>
                       <div style={{width:3, height:16, background:m.color, borderRadius:1, flexShrink:0}} />
                       <div style={{flex:1, minWidth:0}}>
-                        <div style={{fontSize:11, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{m.name}</div>
-                        <div style={{fontSize:10, color:"var(--text-dimmer)"}}>{m.date}</div>
+                        <div style={{fontSize:12, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{m.name}</div>
+                        <div style={{fontSize:11, color:"var(--text-dimmer)"}}>{m.date}</div>
                       </div>
                       <button onClick={()=>delMilestone(m.id)} style={{background:"none", border:"none", color:"var(--text-dimmer)", cursor:"pointer", fontSize:14, flexShrink:0}}>×</button>
                     </div>
@@ -992,7 +993,7 @@ function App() {
               <datalist id="projects-list">{projects.map(p=><option key={p} value={p}/>)}</datalist>
               <div style={{border:"1px solid var(--border)", borderRadius:6, background:"var(--input-bg)", marginBottom:5, padding:"5px 9px", maxHeight:96, overflowY:"auto"}}>
                 {resources.length === 0
-                  ? <span style={{fontSize:11, color:"var(--text-dimmer)"}}>Add resources first</span>
+                  ? <span style={{fontSize:12, color:"var(--text-dimmer)"}}>Add resources first</span>
                   : resources.map(r => (
                       <label key={r.id} style={{display:"flex", alignItems:"center", gap:7, padding:"3px 0", cursor:"pointer"}}>
                         <input type="checkbox" checked={form.resourceIds.includes(r.id)}
@@ -1007,13 +1008,13 @@ function App() {
                 }
               </div>
               <div style={{display:"flex", gap:4, marginBottom:5}}>
-                <input type="date" lang="en-GB" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
-                <input type="date" lang="en-GB" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
+                <input type="date" lang="en-GB" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})} style={{...S.input, flex:1, minWidth:0, fontSize:12}} />
+                <input type="date" lang="en-GB" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})} style={{...S.input, flex:1, minWidth:0, fontSize:12}} />
               </div>
               <textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Notes (optional)" rows={2} style={{...S.input, marginBottom:5, resize:"vertical", fontFamily:"inherit", lineHeight:1.4}} />
               <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:8}}>
                 <input type="number" min="0" max="100" value={form.completion} onChange={e=>setForm({...form,completion:e.target.value})} placeholder="—" style={{...S.input, width:56, flex:"none", textAlign:"center"}} />
-                <span style={{fontSize:11, color:"var(--text-dim)"}}>% complete <span style={{color:"var(--text-dimmer)"}}>(optional)</span></span>
+                <span style={{fontSize:12, color:"var(--text-dim)"}}>% complete <span style={{color:"var(--text-dimmer)"}}>(optional)</span></span>
               </div>
               <button onClick={submitForm} style={{width:"100%", padding:"8px", borderRadius:6, border:"none", background:"#2563EB", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>
                 {form.id?"Save changes":"Add"}
@@ -1035,12 +1036,12 @@ function App() {
                   const col = pColors[t.projectName]||"#3B82F6";
                   return (
                     <div key={t.id} style={{...S.card, borderLeft:`3px solid ${col}`, marginBottom:5}}>
-                      <div style={{fontSize:12, fontWeight:600, color:"var(--text)", marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{t.taskName}</div>
-                      <div style={{fontSize:10, color:"var(--text-dim)"}}>{t.projectName}</div>
-                      <div style={{fontSize:10, color:"var(--text-dimmer)"}}>{resNames} · {t.startDate} → {t.endDate}{t.completion > 0 ? ` · ${t.completion}%` : ""}</div>
+                      <div style={{fontSize:13, fontWeight:600, color:"var(--text)", marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{t.taskName}</div>
+                      <div style={{fontSize:11, color:"var(--text-dim)"}}>{t.projectName}</div>
+                      <div style={{fontSize:11, color:"var(--text-dimmer)"}}>{resNames} · {t.startDate} → {t.endDate}{t.completion > 0 ? ` · ${t.completion}%` : ""}</div>
                       <div style={{display:"flex", gap:5, marginTop:6}}>
-                        <button onClick={()=>editTask(t)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"1px solid var(--border)", background:"transparent", color:"var(--text-muted)", fontSize:10, cursor:"pointer"}}>✏ Edit</button>
-                        <button onClick={()=>delTask(t.id)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"none", background:"rgba(127,29,29,0.5)", color:"#FCA5A5", fontSize:10, cursor:"pointer"}}>✕ Del</button>
+                        <button onClick={()=>editTask(t)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"1px solid var(--border)", background:"transparent", color:"var(--text-muted)", fontSize:11, cursor:"pointer"}}>✏ Edit</button>
+                        <button onClick={()=>delTask(t.id)} style={{flex:1, padding:"3px 0", borderRadius:4, border:"none", background:"rgba(127,29,29,0.5)", color:"#FCA5A5", fontSize:11, cursor:"pointer"}}>✕ Del</button>
                       </div>
                     </div>
                   );
@@ -1051,7 +1052,7 @@ function App() {
             <div style={{marginTop:"auto", paddingTop:10, borderTop:"1px solid var(--border)"}}>
               <button
                 onClick={clearBoard}
-                style={{width:"100%", padding:"6px 10px", borderRadius:6, border:"1px solid rgba(127,29,29,0.5)", background:"transparent", color:"#F87171", fontSize:11, fontWeight:600, cursor:"pointer", letterSpacing:"0.04em"}}
+                style={{width:"100%", padding:"6px 10px", borderRadius:6, border:"1px solid rgba(127,29,29,0.5)", background:"transparent", color:"#F87171", fontSize:12, fontWeight:600, cursor:"pointer", letterSpacing:"0.04em"}}
               >
                 ⊘ Clear board
               </button>
@@ -1076,9 +1077,9 @@ function App() {
                   <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:10, flexWrap:"wrap"}}>
                     <div style={{...S.sectionTitle, marginBottom:0}}>GANTT — IMPLEMENTATION TIMELINE</div>
                     <div className="no-print" style={{display:"flex", alignItems:"center", gap:6}}>
-                      <span style={{fontSize:10, color:"var(--text-dimmer)", fontWeight:600, letterSpacing:"0.08em"}}>GROUP BY</span>
+                      <span style={{fontSize:11, color:"var(--text-dimmer)", fontWeight:600, letterSpacing:"0.08em"}}>GROUP BY</span>
                       {[["resource","Resource"],["project","Project"]].map(([g, lbl]) => (
-                        <button key={g} style={{...S.btn(groupBy===g), padding:"3px 10px", fontSize:11}} onClick={() => changeGroupBy(g)}>{lbl}</button>
+                        <button key={g} style={{...S.btn(groupBy===g), padding:"3px 10px", fontSize:12}} onClick={() => changeGroupBy(g)}>{lbl}</button>
                       ))}
                     </div>
                   </div>
@@ -1086,7 +1087,7 @@ function App() {
 
                     {/* Sticky column header */}
                     <div style={{display:"flex", borderBottom:"1px solid var(--border)", background:"var(--surface-2)", position:"sticky", top:0, zIndex:10}}>
-                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>{groupBy==="project" ? "Project / Resource" : "Resource / Task"}</div>
+                      <div style={{width:LABEL_W, flexShrink:0, padding:"7px 10px", fontSize:11, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>{groupBy==="project" ? "Project / Resource" : "Resource / Task"}</div>
                       <div style={{flex:1, overflow:"clip"}}>
                         <div ref={ganttHeaderRef} style={{display:"flex"}}>
                           {ganttColPositions.map((col, i) => {
@@ -1097,7 +1098,7 @@ function App() {
                                 width: col.width,
                                 flexShrink: 0,
                                 padding: granularity === 'day' ? "4px 2px" : "5px 3px",
-                                fontSize: granularity === 'day' ? 8 : 9,
+                                fontSize: granularity === 'day' ? 10 : 11,
                                 color: isWeekend ? "var(--text-faint)" : "var(--text-dimmer)",
                                 textAlign: "center",
                                 lineHeight: 1.35,
@@ -1117,15 +1118,15 @@ function App() {
 
                     {/* Horizontally scrollable body */}
                     <div ref={ganttScrollRef} style={{overflowX:"auto"}} onScroll={handleGanttScroll}>
-                      <div style={{minWidth: 148 + sharedTimelineW, position:"relative"}}>
+                      <div style={{minWidth: LABEL_W + sharedTimelineW, position:"relative"}}>
 
                         {/* Milestone overlays */}
                         {milestones.map(m => {
                           const mLeft = (parseDate(m.date) - timelineStart) / 86400000 * dayW;
                           if (mLeft < 0 || mLeft > sharedTimelineW) return null;
                           return (
-                            <div key={m.id} style={{position:"absolute", top:0, bottom:0, left:148+mLeft, width:2, background:m.color, zIndex:4, pointerEvents:"none", opacity:0.9}}>
-                              <div style={{position:"absolute", top:4, left:4, fontSize:9, color:m.color, fontWeight:700, whiteSpace:"nowrap", background:"var(--bg)", padding:"2px 5px", borderRadius:3, letterSpacing:"0.02em"}}>◆ {m.name}</div>
+                            <div key={m.id} style={{position:"absolute", top:0, bottom:0, left:LABEL_W+mLeft, width:2, background:m.color, zIndex:4, pointerEvents:"none", opacity:0.9}}>
+                              <div style={{position:"absolute", top:4, left:4, fontSize:11, color:m.color, fontWeight:600, whiteSpace:"nowrap", background:"var(--bg)", padding:"2px 5px", borderRadius:3, letterSpacing:"0.02em"}}>◆ {m.name}</div>
                             </div>
                           );
                         })}
@@ -1135,10 +1136,10 @@ function App() {
                           <div key={g.key}>
                             {/* Group header row */}
                             <div style={{display:"flex", background:"var(--surface-3)", borderTop:"1px solid var(--border)"}}>
-                              <div style={{width:148, flexShrink:0, padding:"3px 10px", fontSize:11, fontWeight:700, color:"var(--text-muted)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--surface-3)", zIndex:3}}>
+                              <div style={{width:LABEL_W, flexShrink:0, padding:"4px 10px", fontSize:13, fontWeight:700, color:"var(--text-muted)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--surface-3)", zIndex:3}}>
                                 {g.color && <div style={{width:8, height:8, borderRadius:2, background:g.color, flexShrink:0}} />}
                                 <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}} title={g.name}>{g.name}</span>
-                                <span title={g.badgeTitle} style={{flexShrink:0, borderRadius:9, padding:"1px 6px", fontSize:9, fontWeight:700, ...g.badgeStyle}}>
+                                <span title={g.badgeTitle} style={{flexShrink:0, borderRadius:9, padding:"1px 7px", fontSize:11, fontWeight:700, ...g.badgeStyle}}>
                                   {g.badge}
                                 </span>
                               </div>
@@ -1151,7 +1152,7 @@ function App() {
                     </div>
 
                   </div>
-                  {todayLeft!==null && <div style={{fontSize:10, color:"var(--text-dimmer)", marginTop:5}}>— Red line = today</div>}
+                  {todayLeft!==null && <div style={{fontSize:11, color:"var(--text-dimmer)", marginTop:5}}>— Red line = today</div>}
                 </div>
               )}
 
@@ -1163,7 +1164,7 @@ function App() {
 
                     {/* Sticky week header */}
                     <div style={{display:"flex", borderBottom:"1px solid var(--border)", background:"var(--surface-2)", position:"sticky", top:0, zIndex:10}}>
-                      <div style={{width:148, flexShrink:0, padding:"7px 10px", fontSize:10, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>Resource</div>
+                      <div style={{width:LABEL_W, flexShrink:0, padding:"7px 10px", fontSize:11, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>Resource</div>
                       <div style={{flex:1, overflow:"clip"}}>
                         <div ref={heatHeaderRef} style={{display:"flex"}}>
                           {weeks.map((w,i) => (
@@ -1171,7 +1172,7 @@ function App() {
                               width: heatColW,
                               flexShrink: 0,
                               padding: "7px 3px",
-                              fontSize: heatColW < 30 ? 7 : 9,
+                              fontSize: heatColW < 30 ? 9 : 11,
                               color: "var(--text-dimmer)",
                               textAlign: "center",
                               borderRight: i<weeks.length-1 ? "1px solid var(--border)" : "",
@@ -1188,13 +1189,13 @@ function App() {
 
                     {/* Horizontally scrollable body */}
                     <div ref={heatScrollRef} style={{overflowX:"auto"}} onScroll={handleHeatScroll}>
-                      <div style={{minWidth:148 + sharedTimelineW}}>
+                      <div style={{minWidth:LABEL_W + sharedTimelineW}}>
                         {heatmap
                           .filter(h=>tasks.some(t=>t.resourceIds.includes(h.res.id)))
                           .filter(h => !filterResource || h.res.id === filterResource)
                           .map(({res,cols}) => (
                             <div key={res.id} style={{display:"flex", borderTop:"1px solid var(--border)"}}>
-                              <div style={{width:148, flexShrink:0, padding:"10px", fontSize:12, fontWeight:600, color:"var(--text-heatmap-res)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", position:"sticky", left:0, background:"var(--surface)", zIndex:1}}>{res.name}</div>
+                              <div style={{width:LABEL_W, flexShrink:0, padding:"10px", fontSize:13, fontWeight:600, color:"var(--text-heatmap-res)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", position:"sticky", left:0, background:"var(--surface)", zIndex:1}}>{res.name}</div>
                               {cols.map((cellTasks,i) => {
                                 const totalN   = cellTasks.length;
                                 const projectTasks = filterProject ? cellTasks.filter(t=>t.projectName===filterProject) : cellTasks;
@@ -1226,7 +1227,7 @@ function App() {
                                     }}
                                   >
                                     {totalN>0 && heatColW >= 18 && (
-                                      <span style={{fontSize:Math.min(11, heatColW * 0.38), fontWeight:800, color:heatFg(totalN), letterSpacing:"-0.5px"}}>
+                                      <span style={{fontSize:Math.min(13, heatColW * 0.4), fontWeight:700, color:heatFg(totalN), letterSpacing:"-0.5px"}}>
                                         {filterProject ? `${projectN}/${totalN}` : totalN}
                                       </span>
                                     )}
@@ -1240,11 +1241,11 @@ function App() {
 
                   </div>
                   <div style={{display:"flex", gap:10, marginTop:8, alignItems:"center", flexWrap:"wrap"}}>
-                    <span style={{fontSize:10, color:"var(--text-dimmer)"}}>Parallel tasks:</span>
+                    <span style={{fontSize:11, color:"var(--text-dimmer)"}}>Parallel tasks:</span>
                     {[0,1,2,3,4].map(n => (
                       <div key={n} style={{display:"flex", alignItems:"center", gap:4}}>
                         <div style={{width:18, height:18, borderRadius:3, background:heatBg(n), border:"1px solid var(--border)"}} />
-                        <span style={{fontSize:10, color:"var(--text-dim)"}}>{n===4?"4+":n}</span>
+                        <span style={{fontSize:11, color:"var(--text-dim)"}}>{n===4?"4+":n}</span>
                       </div>
                     ))}
                   </div>
@@ -1273,7 +1274,7 @@ function App() {
                     <div style={{fontWeight:700, fontSize:15, color:"var(--text-bright)", lineHeight:1.2}}>{editModal.taskName || "Edit Task"}</div>
                     <div style={{display:"flex", alignItems:"center", gap:6, marginTop:4}}>
                       <div style={{width:8, height:8, borderRadius:2, background:accentCol, flexShrink:0}} />
-                      <span style={{fontSize:11, color:"var(--text-dim)"}}>{editModal.projectName}</span>
+                      <span style={{fontSize:12, color:"var(--text-dim)"}}>{editModal.projectName}</span>
                     </div>
                   </div>
                   <button onClick={() => setEditModal(null)} style={{background:"none", border:"none", color:"var(--text-dimmer)", cursor:"pointer", fontSize:18, lineHeight:1, padding:"0 2px", flexShrink:0, marginTop:2}}>✕</button>
@@ -1321,8 +1322,8 @@ function App() {
                 {/* Dates */}
                 <div style={{...S.label, marginBottom:5}}>DATES</div>
                 <div style={{display:"flex", gap:6, marginBottom:12}}>
-                  <input type="date" lang="en-GB" value={editModal.startDate} onChange={e => setEditModal({...editModal, startDate:e.target.value})} style={{...S.input, flex:1, fontSize:11}} />
-                  <input type="date" lang="en-GB" value={editModal.endDate}   onChange={e => setEditModal({...editModal, endDate:e.target.value})}   style={{...S.input, flex:1, fontSize:11}} />
+                  <input type="date" lang="en-GB" value={editModal.startDate} onChange={e => setEditModal({...editModal, startDate:e.target.value})} style={{...S.input, flex:1, minWidth:0, fontSize:12}} />
+                  <input type="date" lang="en-GB" value={editModal.endDate}   onChange={e => setEditModal({...editModal, endDate:e.target.value})}   style={{...S.input, flex:1, minWidth:0, fontSize:12}} />
                 </div>
 
                 {/* Completion */}
