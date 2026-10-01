@@ -1381,13 +1381,14 @@ function App() {
                     <div ref={ganttScrollRef} style={{overflowX:"auto"}} onScroll={handleGanttScroll}>
                       <div style={{minWidth: LABEL_W + sharedTimelineW, position:"relative"}}>
 
-                        {/* Milestone overlays */}
+                        {/* Milestone overlays: thin dashed line drawn *under* bars (same z as bars, earlier in the DOM)
+                            and under the sticky label column; never catches clicks. Today stays the only solid red line. */}
                         {milestones.map(m => {
                           const mLeft = (parseDate(m.date) - timelineStart) / 86400000 * dayW;
                           if (mLeft < 0 || mLeft > sharedTimelineW) return null;
                           return (
-                            <div key={m.id} style={{position:"absolute", top:0, bottom:0, left:LABEL_W+mLeft, width:2, background:m.color, zIndex:4, pointerEvents:"none", opacity:0.9}}>
-                              <div style={{position:"absolute", top:4, left:4, fontSize:11, color:m.color, fontWeight:600, whiteSpace:"nowrap", background:"var(--bg)", padding:"2px 5px", borderRadius:3, letterSpacing:"0.02em"}}>◆ {m.name}</div>
+                            <div key={m.id} style={{position:"absolute", top:0, bottom:0, left:LABEL_W+mLeft, width:0, borderLeft:`1px dashed ${m.color}B3`, zIndex:1, pointerEvents:"none"}}>
+                              <div style={{position:"absolute", top:5, left:4, fontSize:11, color:m.color, fontWeight:600, whiteSpace:"nowrap", background:"var(--surface-3)", padding:"1px 5px", borderRadius:3}}>◆ {m.name}</div>
                             </div>
                           );
                         })}

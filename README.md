@@ -34,7 +34,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Effort %** | Optional share of a person's time per task (100 / 50 / 20 % or custom) — a permanent 20 % help-desk duty no longer counts like a full-time project. New tasks inherit the effort of the last task in the same project. Tasks under 50 % are drawn as light, slimmer bars |
 | **Resource & Project filters** | Focus either view on one person or one project — filters compose, heatmap always shows real total load |
 | **Multi-resource tasks** | Assign a task to multiple people — load propagates to each resource in both views |
-| **Milestone markers** | Vertical overlays on the Gantt with custom label and colour — go-live dates, UAT freezes, deployment windows |
+| **Milestone markers** | Thin dashed vertical lines under the bars, with custom label and colour — go-live dates, UAT freezes, deployment windows |
 | **Task notes** | Optional free-text notes per task, visible on hover, with a subtle dot indicator on the bar |
 | **Completion %** | Optional progress field per task — thin strip below the Gantt bar, high-contrast colour |
 | **Drag & drop rescheduling** | Drag bars left/right to shift task dates, or drag either edge to change start/end; click without moving still opens edit |
@@ -107,6 +107,7 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Discreet milestones — 1px dashed line drawn under bars, label stays readable
 - [x] SVG chevron on every collapsible section — rotates right → down, theme colour
 - [x] Projects section collapsible like the others (open by default — it's the colour legend)
 - [x] Sticky Gantt / heatmap headers — title and week row stay visible on long boards; sidebar scrolls independently

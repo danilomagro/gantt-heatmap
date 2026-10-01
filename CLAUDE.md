@@ -41,7 +41,7 @@ Board data under key `pm-gantt-v2`:
 
 ## Bar visual language
 
-Solid bar = committed work; light tinted slimmer bar (`LIGHT_BELOW` 50 %) = background duty; diagonal stripes + dashed outline = tentative; grey hatch over the timeline = time off. Keep new states distinguishable from these.
+Solid bar = committed work; light tinted slimmer bar (`LIGHT_BELOW` 50 %) = background duty; diagonal stripes + dashed outline = tentative; grey hatch over the timeline = time off; thin dashed line under the bars = milestone (today is the only solid red line). Keep new states distinguishable from these.
 
 ## Typography
 
