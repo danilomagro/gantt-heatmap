@@ -45,7 +45,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Clear board** | Wipe all data in one step (with confirmation) to start fresh |
 | **Export / Import JSON** | Full data portability — sync between devices or share snapshots with your team |
 | **Print / PDF export** | Browser print dialog, landscape layout, sidebar hidden, colours preserved |
-| **Synchronized horizontal scroll** | Both views scroll in sync when tasks span many weeks; resource column stays fixed |
+| **Synchronized horizontal scroll** | Both views scroll in sync when tasks span many weeks; resource column stays fixed, section titles and week headers stay pinned while scrolling down |
 | **Keyboard shortcuts** | Enter to submit task form, Esc to cancel |
 | **Sample data** | One-click load of a realistic 18-week scenario — instant onboarding |
 
@@ -107,6 +107,7 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Sticky Gantt / heatmap headers — title and week row stay visible on long boards; sidebar scrolls independently
 - [x] Project name on bars in resource view — truncates the task name first on short bars
 - [x] Time off — hatched blocks, capacity-aware heatmap, ⚠ clash warnings
 - [x] Tentative tasks — striped bars, Hide / Show / Count toggle, one-click confirm

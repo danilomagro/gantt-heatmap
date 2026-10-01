@@ -134,6 +134,9 @@
       border: none !important;
     }
 
+    #pm-app { height: auto !important; }
+    #pm-layout { overflow: visible !important; }
+    .pm-sticky { position: static !important; }
     main { overflow: visible !important; }
     [style*="overflow-x: auto"] { overflow: visible !important; }
   }
@@ -220,6 +223,20 @@ function decodeBoard(encoded) {
   } catch { return null; }
 }
 
+// Height of a DOM node, kept current with ResizeObserver (callback ref: survives mount/unmount)
+function useMeasuredHeight() {
+  const [h, setH] = React.useState(0);
+  const roRef = React.useRef(null);
+  const ref = React.useCallback(node => {
+    if (roRef.current) { roRef.current.disconnect(); roRef.current = null; }
+    if (node) {
+      setH(node.offsetHeight);
+      const ro = new ResizeObserver(() => setH(node.offsetHeight)); ro.observe(node); roRef.current = ro;
+    }
+  }, []);
+  return [ref, h];
+}
+
 function App() {
   const [tasks, setTasks] = React.useState([]);
   const [resources, setResources] = React.useState([]);
@@ -259,6 +276,9 @@ function App() {
   const [copyToast, setCopyToast] = React.useState(false);  // "Link copied!" feedback
 
   const mainRef        = React.useRef(null);
+  // Section titles stick to the top of <main>; the column headers stick right below them
+  const [ganttTitleRef, ganttTitleH] = useMeasuredHeight();
+  const [heatTitleRef,  heatTitleH]  = useMeasuredHeight();
   const undoTimerRef   = React.useRef(null);
   const dragRef        = React.useRef(null);
   const lastDragMovedRef = React.useRef(false);
@@ -733,10 +753,10 @@ function App() {
 
   // ── styles ────────────────────────────────────────────────────────────────
   const S = {
-    app:          { fontFamily:"'Segoe UI',system-ui,sans-serif", background:"var(--bg)", minHeight:"100vh", display:"flex", flexDirection:"column", color:"var(--text)" },
+    app:          { fontFamily:"'Segoe UI',system-ui,sans-serif", background:"var(--bg)", height:"100vh", display:"flex", flexDirection:"column", color:"var(--text)" },
     header:       { background:"var(--surface)", borderBottom:"1px solid var(--border)", padding:"10px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap" },
     aside:        { width:256, background:"var(--surface)", borderRight:"1px solid var(--border)", padding:"14px 12px", overflowY:"auto", flexShrink:0, display:"flex", flexDirection:"column", gap:16 },
-    main:         { flex:1, overflowY:"auto", overflowX:"hidden", padding:"16px 20px", minWidth:0 },
+    main:         { flex:1, overflowY:"auto", overflowX:"hidden", padding:"0 20px 16px", minWidth:0 },   // no top padding: sticky titles carry it, so nothing peeks above them
     label:        { fontSize:11, fontWeight:600, color:"var(--text-dimmer)", letterSpacing:"0.12em" },
     input:        { width:"100%", padding:"7px 9px", borderRadius:6, border:"1px solid var(--border)", background:"var(--input-bg)", color:"var(--text)", fontSize:13, outline:"none" },
     btn:          active => ({ padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer", fontSize:13, fontWeight:600, background:active?"#2563EB":"var(--btn-bg)", color:active?"#fff":"var(--btn-color)" }),
@@ -996,7 +1016,7 @@ function App() {
 
   // ── render ────────────────────────────────────────────────────────────────
   return (
-    <div style={S.app}>
+    <div id="pm-app" style={S.app}>
       <header style={S.header}>
         <div style={{display:"flex", alignItems:"baseline", gap:12}}>
           <span style={{fontWeight:800, fontSize:16, letterSpacing:"-0.5px", color:"var(--text-bright)"}}>PM Workload Board</span>
@@ -1055,7 +1075,7 @@ function App() {
         </div>
       )}
 
-      <div id="pm-layout" style={{display:"flex", flex:1, overflow:"hidden"}}>
+      <div id="pm-layout" style={{display:"flex", flex:1, minHeight:0, overflow:"hidden"}}>
         {sideOpen && (
           <aside id="pm-sidebar" style={S.aside}>
 
@@ -1297,7 +1317,7 @@ function App() {
               {/* ── GANTT ────────────────────────────────────────────────── */}
               {(view==="gantt"||view==="both") && (
                 <div>
-                  <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:10, flexWrap:"wrap"}}>
+                  <div ref={ganttTitleRef} className="pm-sticky" style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, padding:"14px 0 10px", flexWrap:"wrap", position:"sticky", top:0, zIndex:12, background:"var(--bg)"}}>
                     <div style={{...S.sectionTitle, marginBottom:0}}>GANTT — IMPLEMENTATION TIMELINE</div>
                     <div className="no-print" style={{display:"flex", alignItems:"center", gap:6, flexWrap:"wrap"}}>
                       {hasTentative && <>
@@ -1316,7 +1336,7 @@ function App() {
                   <div style={S.sectionBox}>
 
                     {/* Sticky column header */}
-                    <div style={{display:"flex", borderBottom:"1px solid var(--border)", background:"var(--surface-2)", position:"sticky", top:0, zIndex:10}}>
+                    <div style={{display:"flex", borderBottom:"1px solid var(--border)", background:"var(--surface-2)", position:"sticky", top:ganttTitleH, zIndex:10}} className="pm-sticky">
                       <div style={{width:LABEL_W, flexShrink:0, padding:"7px 10px", fontSize:11, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>{groupBy==="project" ? "Project / Resource" : "Resource / Task"}</div>
                       <div style={{flex:1, overflow:"clip"}}>
                         <div ref={ganttHeaderRef} style={{display:"flex"}}>
@@ -1391,11 +1411,11 @@ function App() {
               {/* ── HEATMAP ──────────────────────────────────────────────── */}
               {(view==="heatmap"||view==="both") && (
                 <div>
-                  <div style={S.sectionTitle}>HEATMAP — WEEKLY LOAD BY RESOURCE</div>
+                  <div ref={heatTitleRef} className="pm-sticky" style={{...S.sectionTitle, marginBottom:0, padding:"14px 0 10px", position:"sticky", top:0, zIndex:12, background:"var(--bg)"}}>HEATMAP — WEEKLY LOAD BY RESOURCE</div>
                   <div style={S.sectionBox}>
 
                     {/* Sticky week header */}
-                    <div style={{display:"flex", borderBottom:"1px solid var(--border)", background:"var(--surface-2)", position:"sticky", top:0, zIndex:10}}>
+                    <div style={{display:"flex", borderBottom:"1px solid var(--border)", background:"var(--surface-2)", position:"sticky", top:heatTitleH, zIndex:10}} className="pm-sticky">
                       <div style={{width:LABEL_W, flexShrink:0, padding:"7px 10px", fontSize:11, color:"var(--text-faint)", borderRight:"1px solid var(--border)", position:"relative", zIndex:11, background:"var(--surface-2)"}}>Resource</div>
                       <div style={{flex:1, overflow:"clip"}}>
                         <div ref={heatHeaderRef} style={{display:"flex"}}>
