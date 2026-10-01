@@ -27,7 +27,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 
 | | |
 |---|---|
-| **Cross-project Gantt** | Timeline grouped by resource, bars coloured by project, red line = today, click bar to edit |
+| **Cross-project Gantt** | Timeline grouped by resource, bars coloured by project and labelled `PROJECT · task` in resource view, red line = today, click bar to edit |
 | **Group by Resource / Project** | Toggle the Gantt between person → tasks and project → people involved; overlapping bars stack in lanes, choice saved in localStorage |
 | **Day / Week / Month zoom** | Switch timeline granularity — day view shows weekends dimmed, week view shows ISO week numbers (W19…), month view gives a bird's-eye overview |
 | **Capacity Heatmap** | Derived automatically from Gantt — resource × week grid showing weekly load as % of capacity (task effort × working days), blue → amber → red |
@@ -107,6 +107,7 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Project name on bars in resource view — truncates the task name first on short bars
 - [x] Time off — hatched blocks, capacity-aware heatmap, ⚠ clash warnings
 - [x] Tentative tasks — striped bars, Hide / Show / Count toggle, one-click confirm
 - [x] Low-effort tasks (< 50 %) drawn as light, slimmer bars

@@ -970,12 +970,17 @@ function App() {
                     boxShadow: light || tent ? "none" : "0 0 0 1px rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.4)"
                   }}
                 >
-                  {task.taskName}
+                  {/* By resource the project prefixes the task; it never shrinks first — the task name truncates */}
+                  {groupBy === "resource" && <>
+                    <span style={{flexShrink:0, maxWidth:"100%", overflow:"hidden", textOverflow:"ellipsis", fontSize:11, fontWeight:600, fontStyle:"normal", letterSpacing:"0.05em", textTransform:"uppercase", opacity:0.75}}>{task.projectName}</span>
+                    <span style={{flexShrink:0, opacity:0.55, margin:"0 5px"}}>·</span>
+                  </>}
+                  <span style={{minWidth:0, overflow:"hidden", textOverflow:"ellipsis"}}>{task.taskName}</span>
                   {allocOf(task) < 100 && (
                     <span style={{marginLeft:6, padding:"0 5px", borderRadius:8, background: light || tent ? col : "rgba(0,0,0,0.28)", color:"#fff", fontSize:11, fontWeight:600, flexShrink:0}}>{allocOf(task)}%</span>
                   )}
                   {tent && (
-                    <span style={{marginLeft:6, padding:"0 5px", borderRadius:8, border:`1px dashed ${col}`, fontSize:10, fontWeight:600, fontStyle:"normal", letterSpacing:"0.04em", flexShrink:0}}>TENTATIVE</span>
+                    <span style={{marginLeft:6, padding:"0 5px", borderRadius:8, border:`1px dashed ${col}`, fontSize:11, fontWeight:600, fontStyle:"normal", letterSpacing:"0.04em", flexShrink:0}}>TENTATIVE</span>
                   )}
                   {task.notes && (
                     <div style={{position:"absolute", top:3, right:4, width:5, height:5, borderRadius:"50%", background: light || tent ? col : "#fff", opacity: light || tent ? 0.9 : 0.6, flexShrink:0}} />
