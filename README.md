@@ -107,6 +107,7 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] SVG chevron on every collapsible section — rotates right → down, theme colour
 - [x] Projects section collapsible like the others (open by default — it's the colour legend)
 - [x] Sticky Gantt / heatmap headers — title and week row stay visible on long boards; sidebar scrolls independently
 - [x] Project name on bars in resource view — truncates the task name first on short bars

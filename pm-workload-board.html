@@ -237,6 +237,31 @@ function useMeasuredHeight() {
   return [ref, h];
 }
 
+// Disclosure chevron: points right when closed, rotates down when open
+function Chevron({ open, size = 12 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true"
+      style={{flexShrink:0, color:"var(--text-dim)", transform:`rotate(${open ? 90 : 0}deg)`, transition:"transform 0.15s ease"}}>
+      <path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Collapsible sidebar section header. Lives outside App so it isn't remounted
+// on every render (which would also kill the chevron transition).
+function ColHdr({ label, count, open, onToggle }) {
+  const [hov, setHov] = React.useState(false);
+  return (
+    <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", userSelect:"none",
+                 padding:"4px 6px", margin:"0 -6px", borderRadius:5,
+                 background: hov ? "var(--surface-3)" : "transparent", transition:"background 0.12s"}}
+      onClick={onToggle} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      <span style={{fontSize:11, fontWeight:600, color:"var(--text-dimmer)", letterSpacing:"0.12em"}}>{label}{count > 0 ? ` (${count})` : ""}</span>
+      <span style={{marginLeft:6, display:"flex"}}><Chevron open={open} /></span>
+    </div>
+  );
+}
+
 function App() {
   const [tasks, setTasks] = React.useState([]);
   const [resources, setResources] = React.useState([]);
@@ -764,21 +789,6 @@ function App() {
     card:         { background:"var(--card-bg)", borderRadius:6, padding:"8px 10px", marginBottom:6 },
     sectionTitle: { fontSize:12, fontWeight:700, color:"var(--text-dimmer)", letterSpacing:"0.1em", marginBottom:10 },
     sectionBox:   { background:"var(--surface)", borderRadius:10, border:"1px solid var(--border)", overflow:"clip" },
-    colHdr:       { display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", userSelect:"none" },
-  };
-
-  const ColHdr = ({ label, count, open, onToggle }) => {
-    const [hov, setHov] = React.useState(false);
-    return (
-      <div style={{...S.colHdr, padding:"4px 6px", margin:"0 -6px", borderRadius:5,
-                   background: hov ? "var(--surface-3)" : "transparent", transition:"background 0.12s"}}
-        onClick={onToggle} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-        <span style={S.label}>{label}{count > 0 ? ` (${count})` : ""}</span>
-        <span style={{fontSize:15, color:"var(--text-dim)", marginLeft:6, flexShrink:0, lineHeight:1}}>
-          {open ? "∨" : "›"}
-        </span>
-      </div>
-    );
   };
 
   const renderAllocPicker = (value, onChange) => (
@@ -1233,7 +1243,7 @@ function App() {
               {/* Optional fields stay folded away; the summary shows any non-default value */}
               <div onClick={() => setMoreOpen(o => { const n=!o; try{localStorage.setItem("pm-gantt-moreOpen",n?"1":"0");}catch{} return n; })}
                 style={{display:"flex", alignItems:"center", gap:6, cursor:"pointer", userSelect:"none", padding:"3px 0", marginBottom:5, fontSize:12, color:"var(--text-dim)"}}>
-                <span style={{fontSize:13, width:10}}>{moreOpen ? "∨" : "›"}</span>
+                <span style={{display:"flex", width:12}}><Chevron open={moreOpen} /></span>
                 <span>More options</span>
                 {!moreOpen && (() => {
                   const bits = [form.tentative && "tentative", form.allocation !== 100 && `${form.allocation}% effort`, form.notes && "notes", form.completion !== "" && `${form.completion}% done`].filter(Boolean);
