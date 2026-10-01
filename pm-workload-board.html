@@ -267,6 +267,7 @@ function App() {
   const [filterResource, setFilterResource] = React.useState("");
   const [filterProject, setFilterProject] = React.useState("");
   const [resOpen, setResOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-resOpen") === "1"; } catch { return false; } });
+  const [projOpen, setProjOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-projOpen") !== "0"; } catch { return true; } });   // open by default: it's the colour legend
   const [msOpen, setMsOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-msOpen") === "1"; } catch { return false; } });
   const [moreOpen, setMoreOpen] = React.useState(() => { try { return localStorage.getItem("pm-gantt-moreOpen") === "1"; } catch { return false; } });
   const [tasksOpen, setTasksOpen] = React.useState(() => { try { const v = localStorage.getItem("pm-gantt-tasksOpen"); return v === null ? true : v === "1"; } catch { return true; } });
@@ -1132,13 +1133,13 @@ function App() {
 
             {projects.length > 0 && (
               <div>
-                <div style={{...S.label, marginBottom:8}}>PROJECTS</div>
-                {projects.map(p => (
+                <ColHdr label="PROJECTS" count={projects.length} open={projOpen} onToggle={() => setProjOpen(o=>{ const n=!o; try{localStorage.setItem("pm-gantt-projOpen",n?"1":"0");}catch{} return n; })} />
+                {projOpen && <div style={{marginTop:8}}>{projects.map(p => (
                   <div key={p} style={{display:"flex", alignItems:"center", gap:7, marginBottom:4}}>
                     <div style={{width:10, height:10, borderRadius:2, background:pColors[p], flexShrink:0}} />
                     <span style={{fontSize:12, color:"var(--text-muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{p}</span>
                   </div>
-                ))}
+                ))}</div>}
               </div>
             )}
 
