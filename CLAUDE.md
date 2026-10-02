@@ -14,7 +14,7 @@ The heatmap is **derived** from the Gantt, never filled in manually — "the red
 - **`pm-workload-board.html` is the whole app**: React 18 + Babel standalone from cdnjs, JSX compiled in the browser. No build step, no npm, no backend. Keep it that way — no bundlers, no extra files the app depends on.
 - `index.html` only redirects to the app and carries Open Graph tags. Don't rename or move either file: their URLs are shared publicly.
 - Styling: inline style objects plus CSS custom properties (`--bg`, `--surface`, `--text-dim`, …) defined for `[data-theme="dark"]` and `[data-theme="light"]`. Use the variables, never hard-coded theme colours. Font: Segoe UI / system-ui (no web fonts, must work offline).
-- Layout: the app is exactly `100vh`; `<main>` and the sidebar are the scroll containers (sticky headers depend on it — don't go back to `minHeight`). Section titles stick at top 0, week headers at the measured title height (`useMeasuredHeight`); `.pm-sticky` is reset to static in print.
+- Layout: the app is exactly `100vh`; `<main>` and the sidebar are the scroll containers (sticky headers depend on it — don't go back to `minHeight`). Section titles stick at top 0, week headers at the measured title height (`useMeasuredHeight`); `.pm-sticky` is reset to static in print. Sidebar sections never get their own scroller (an inner `flex:1` scroller collapses to 0px in the fixed-height column) — the whole sidebar scrolls.
 - Positioning is driven by `dayW` (px per calendar day: Day 38, Week 80/7, Month 120/30.44). `LABEL_W` is the fixed label column shared by Gantt and heatmap.
 
 ## Data (localStorage)
