@@ -47,7 +47,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 | **Print / PDF export** | Browser print dialog, landscape layout, sidebar hidden, colours preserved |
 | **Synchronized horizontal scroll** | Both views scroll in sync when tasks span many weeks; resource column stays fixed, section titles and week headers stay pinned while scrolling down |
 | **Keyboard shortcuts** | Enter to submit task form, Esc to cancel |
-| **Sample data** | One-click load of a realistic 18-week scenario — instant onboarding |
+| **Sample data** | One-click load of a realistic scenario that always lands around today — shows effort %, a tentative task, time off clashes, completion and milestones |
 
 ---
 
@@ -107,6 +107,7 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Sample data relative to today — today's line always mid-board; adds a 50 % task and completion values
 - [x] Discreet milestones — 1px dashed line drawn under bars, label stays readable
 - [x] SVG chevron on every collapsible section — rotates right → down, theme colour
 - [x] Projects section collapsible like the others (open by default — it's the colour legend)

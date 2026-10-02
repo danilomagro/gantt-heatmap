@@ -39,6 +39,8 @@ Board data under key `pm-gantt-v2`:
 - Keep task creation light: only name, project, people, dates are visible; optional fields live under "More options" and new tasks inherit effort from the project's latest task.
 - Share links encode the board as base64url JSON in `#board=…`; the app then shows a non-saving preview with "Import to my board".
 
+- Sample data: `SAMPLE_DATA` is authored on a fixed calendar (anchor Mon 2026-04-20, scenario "today" = week 7). `buildSampleData()` shifts everything by whole weeks so that week lands on the real current week; keep notes and labels free of absolute dates or seasons. Completion values assume the scenario's today.
+
 ## Bar visual language
 
 Solid bar = committed work; light tinted slimmer bar (`LIGHT_BELOW` 50 %) = background duty; diagonal stripes + dashed outline = tentative; grey hatch over the timeline = time off; thin dashed line under the bars = milestone (today is the only solid red line). Keep new states distinguishable from these.
