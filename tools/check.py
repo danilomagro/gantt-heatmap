@@ -1,14 +1,12 @@
 """Regression checks for pm-workload-board.html.
 
-Serves the repo on a local port, opens tools/check.html in headless Chrome (1920x1080),
-and prints the result of every check. Exit code 1 if any check fails.
+Serves the repo on a local port, opens tools/check.html in headless Chrome (1920x1080, real time),
+and collects the results the page POSTs back. Prints every check; exit code 1 if any fails.
 
     python tools/check.py
 """
-import html
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -18,12 +16,15 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TIMEOUT_S = 180
 CHROME_CANDIDATES = [
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "google-chrome", "chromium", "chromium-browser",
 ]
+
+state = {"results": [], "done": threading.Event()}
 
 
 def find_chrome():
@@ -33,7 +34,7 @@ def find_chrome():
     sys.exit("Chrome not found — install Google Chrome or edit CHROME_CANDIDATES")
 
 
-class QuietHandler(SimpleHTTPRequestHandler):
+class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
@@ -41,38 +42,47 @@ class QuietHandler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")   # always test the file on disk
         super().end_headers()
 
+    def do_POST(self):
+        # check.html posts {results, done} after every check, so a hang still leaves partial results
+        body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+        state["results"] = body.get("results", [])
+        if body.get("done"):
+            state["done"].set()
+        self.send_response(204)
+        self.end_headers()
+
 
 def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # Windows consoles default to cp1252
-    server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=ROOT))
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), partial(Handler, directory=ROOT))
     port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
     profile = tempfile.mkdtemp(prefix="pmwb-check-")
-    try:
-        out = subprocess.run(
-            [find_chrome(), "--headless=new", f"--user-data-dir={profile}", "--window-size=1920,1180",
-             "--force-device-scale-factor=1", "--virtual-time-budget=300000", "--dump-dom",
-             f"http://127.0.0.1:{port}/tools/check.html"],
-            capture_output=True, text=True, encoding="utf-8", timeout=300,
-        ).stdout
-    finally:
-        server.shutdown()
-        shutil.rmtree(profile, ignore_errors=True)
+    chrome = subprocess.Popen(
+        [find_chrome(), "--headless=new", f"--user-data-dir={profile}", "--window-size=1920,1180",
+         "--force-device-scale-factor=1", "--no-first-run", "--no-default-browser-check",
+         f"http://127.0.0.1:{port}/tools/check.html"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    finished = state["done"].wait(TIMEOUT_S)
+    chrome.kill()
+    chrome.wait()
+    server.shutdown()
+    shutil.rmtree(profile, ignore_errors=True)
 
-    m = re.search(r'<pre id="result"[^>]*>(.*?)</pre>', out, re.S)
-    if not m or 'data-done="1"' not in out:
-        print("Checks did not finish. Raw output tail:\n" + out[-2000:])
-        return 1
-    results = json.loads(html.unescape(m.group(1)))
+    results = list(state["results"])
+    if not finished:
+        results.append({"name": f"harness finished within {TIMEOUT_S}s (it hung right after the last check above)", "ok": False})
     failed = [r for r in results if not r["ok"]]
     for r in results:
         mark = "OK  " if r["ok"] else "FAIL"
         detail = f"  ({r['detail']})" if r.get("detail") not in (None, "") else ""
         print(f"{mark} {r['name']}{detail}")
     print(f"\n{len(results) - len(failed)}/{len(results)} checks passed")
-    return 1 if failed else 0
+    return 1 if failed or not results else 0
 
 
 if __name__ == "__main__":

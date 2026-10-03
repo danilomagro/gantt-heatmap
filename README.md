@@ -41,6 +41,7 @@ The heatmap is never filled in by hand. Red means red because the bars say so.
 
 ### Share it
 - **Share link**: the whole board encoded in a URL. Recipients get a preview that never touches their own board, and can import it with one click
+- **Auto-backup to a folder** (Chrome / Edge): pick e.g. your Google Drive folder and every change is saved there a few seconds later, one file per day plus a *latest* copy
 - **Export / Import JSON**, **Print / PDF**
 - **Light / dark theme**, readable on a standard 1080p office monitor
 
@@ -81,7 +82,7 @@ With every task at 100 %, the colours match the number of parallel tasks (1, 2, 
 
 ### Your data
 - Everything is stored in your browser (`localStorage`): no server, no account, nothing uploaded.
-- Data stays in **that** browser on **that** computer. Use **Export** to keep a copy or move between machines.
+- Data stays in **that** browser on **that** computer. Turn on **☁ Auto-backup** (Chrome / Edge) to keep copies in a folder you choose, such as Google Drive, or use **Export** to save one by hand. **Import** restores either.
 - A share link carries the board inside the link itself (after `#`, which browsers never send to a server). It goes only where you send it.
 
 ### Technical notes
@@ -94,7 +95,7 @@ With every task at 100 %, the colours match the number of parallel tasks (1, 2, 
 
 See the full history on the **[Releases page](https://github.com/danilomagro/gantt-heatmap/releases)**.
 
-Latest additions: undo / redo for every change, Overview mode, sticky headers, project name on bars, sample data relative to today, discreet milestones, collapsible Projects section.
+Latest additions: auto-backup to a folder, undo / redo for every change, Overview mode, sticky headers, project name on bars, sample data relative to today, discreet milestones, collapsible Projects section.
 
 ### Backlog
 

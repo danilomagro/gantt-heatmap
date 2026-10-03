@@ -241,6 +241,40 @@ function decodeBoard(encoded) {
 }
 
 // Height of a DOM node, kept current with ResizeObserver (callback ref: survives mount/unmount)
+// ── auto-backup to a folder (File System Access API — Chrome / Edge) ─────────
+// The chosen folder's handle lives in IndexedDB (handles can't go in localStorage).
+const BACKUP_SUPPORTED = typeof window.showDirectoryPicker === "function";
+const BACKUP_DELAY_MS  = 5000;   // write this long after the last change
+const idb = {
+  open: () => new Promise((res, rej) => {
+    const r = indexedDB.open("pmwb", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  }),
+  async get(k) {
+    const db = await idb.open();
+    return new Promise((res, rej) => { const q = db.transaction("kv").objectStore("kv").get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+  },
+  async set(k, v) {
+    const db = await idb.open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction("kv", "readwrite");
+      if (v === undefined) tx.objectStore("kv").delete(k); else tx.objectStore("kv").put(v, k);
+      tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+    });
+  },
+};
+// One file per day (history) + "latest"; same format as Export, so Import restores either. Never deletes.
+async function writeBackupFiles(dir, json) {
+  const pretty = JSON.stringify(JSON.parse(json), null, 2);
+  for (const name of [`pm-workload-board-${fmtDate(new Date())}.json`, "pm-workload-board-latest.json"]) {
+    const fh = await dir.getFileHandle(name, { create: true });
+    const w = await fh.createWritable();
+    await w.write(pretty);
+    await w.close();
+  }
+}
+
 function useMeasuredHeight() {
   const [h, setH] = React.useState(0);
   const roRef = React.useRef(null);
@@ -437,7 +471,7 @@ function App() {
   const savedRef   = React.useRef(null);   // JSON of the board currently in storage (null until loaded)
   const undoStack  = React.useRef([]);
   const redoStack  = React.useRef([]);
-  const [, setHistVer] = React.useState(0);  // re-render the ↶ ↷ buttons
+  const [histVer, setHistVer] = React.useState(0);  // bumps on every save: re-renders ↶ ↷, triggers backup
 
   const persist = (t, r, c, m, o = timeOffRef.current) => {
     if (sharedRef.current) return;
@@ -480,6 +514,74 @@ function App() {
     undoStack.current = []; redoStack.current = [];
     applyBoard(json);
   };
+
+  // ── auto-backup ───────────────────────────────────────────────────────────
+  // status: unsupported | off | active | paused (browser wants the permission again) | error
+  const [backup, setBackup] = React.useState({ status: BACKUP_SUPPORTED ? "off" : "unsupported" });
+  const [backupOpen, setBackupOpen] = React.useState(false);
+  const backupDirRef   = React.useRef(null);
+  const backupTimerRef = React.useRef(null);
+
+  const runBackup = async () => {
+    clearTimeout(backupTimerRef.current); backupTimerRef.current = null;
+    const dir = backupDirRef.current;
+    if (!dir || savedRef.current === null || sharedRef.current) return;
+    try {
+      if ((await dir.queryPermission({ mode: "readwrite" })) !== "granted") { setBackup(b => ({ ...b, status: "paused" })); return; }
+      await writeBackupFiles(dir, savedRef.current);
+      setBackup(b => ({ ...b, status: "active", last: new Date(), error: "" }));
+    } catch (e) {
+      setBackup(b => ({ ...b, status: "error", error: String(e && e.message || e) }));
+    }
+  };
+
+  // Reconnect to the folder chosen in an earlier session
+  React.useEffect(() => {
+    idb.get("backupDir").then(async dir => {
+      if (!dir) return;
+      backupDirRef.current = dir;
+      const perm = await dir.queryPermission({ mode: "readwrite" });
+      setBackup({ status: perm === "granted" ? "active" : "paused", folder: dir.name, last: null });
+      if (perm === "granted") runBackup();
+    }).catch(() => {});
+  }, []);
+
+  // Debounced write after every change; flush when the tab is hidden or closed
+  React.useEffect(() => {
+    if (!backupDirRef.current) return;
+    clearTimeout(backupTimerRef.current);
+    backupTimerRef.current = setTimeout(runBackup, BACKUP_DELAY_MS);
+  }, [histVer]);
+  React.useEffect(() => {
+    const flush = () => { if (document.visibilityState === "hidden" && backupTimerRef.current) runBackup(); };
+    document.addEventListener("visibilitychange", flush);
+    return () => document.removeEventListener("visibilitychange", flush);
+  }, []);
+
+  const chooseBackupFolder = async () => {
+    try {
+      const dir = await window.showDirectoryPicker({ id: "pmwb-backup", mode: "readwrite", startIn: "documents" });
+      await idb.set("backupDir", dir);
+      backupDirRef.current = dir;
+      setBackup({ status: "active", folder: dir.name, last: null });
+      await runBackup();
+    } catch (e) {
+      if (e && e.name !== "AbortError") setBackup(b => ({ ...b, status: "error", error: String(e.message || e) }));
+    }
+  };
+  const resumeBackup = async () => {   // must run inside the click: requestPermission needs a user gesture
+    const dir = backupDirRef.current;
+    if (!dir) return;
+    if ((await dir.requestPermission({ mode: "readwrite" })) === "granted") { setBackup(b => ({ ...b, status: "active" })); runBackup(); }
+  };
+  const stopBackup = async () => {
+    clearTimeout(backupTimerRef.current);
+    backupDirRef.current = null;
+    await idb.set("backupDir", undefined).catch(() => {});
+    setBackup({ status: "off" });
+    setBackupOpen(false);
+  };
+  const fmtTime = d => d ? d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : null;
 
   // Toast after a deletion; its Undo button is just the first step of the history
   const saveUndo = label => {
@@ -1170,6 +1272,18 @@ function App() {
           <label className="no-print" style={{...S.btn(false), color:"#60A5FA", cursor:"pointer"}}>
             ⬆ Import<input type="file" accept=".json" onChange={importJSON} style={{display:"none"}} />
           </label>
+          {backup.status !== "unsupported" && (() => {
+            const look = {
+              off:    { label: "☁ Auto-backup", color: "#60A5FA", title: "Save every change to a folder of your choice (e.g. Google Drive)" },
+              active: { label: backup.last ? `☁ Backed up ${fmtTime(backup.last)}` : "☁ Backup on", color: "#34D399", title: `Backing up to “${backup.folder}”` },
+              paused: { label: "☁ Resume backup", color: "#F59E0B", title: `The browser needs your OK to keep writing to “${backup.folder}”` },
+              error:  { label: "⚠ Backup failed", color: "#F87171", title: backup.error },
+            }[backup.status];
+            return (
+              <button className="no-print" title={look.title} style={{...S.btn(false), color: look.color}}
+                onClick={() => backup.status === "paused" ? resumeBackup() : setBackupOpen(true)}>{look.label}</button>
+            );
+          })()}
           <button onClick={() => window.print()} className="no-print" style={{...S.btn(false), color:"#A78BFA"}}>🖨 Print</button>
           <button onClick={() => setSideOpen(o=>!o)} style={S.btn(false)} title="Toggle sidebar">☰</button>
         </div>
@@ -1790,6 +1904,39 @@ function App() {
           </div>
         );
       })()}
+
+      {/* AUTO-BACKUP DIALOG */}
+      {backupOpen && (
+        <div onClick={e => { if (e.target === e.currentTarget) setBackupOpen(false); }}
+          style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:16}}>
+          <div style={{background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12, width:460, maxWidth:"100%", padding:"20px 22px", boxShadow:"0 24px 64px rgba(0,0,0,0.55)"}}>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12}}>
+              <div style={{fontWeight:700, fontSize:15, color:"var(--text-bright)"}}>☁ Auto-backup</div>
+              <button onClick={() => setBackupOpen(false)} style={{background:"none", border:"none", color:"var(--text-dimmer)", cursor:"pointer", fontSize:18, lineHeight:1}}>✕</button>
+            </div>
+            {backup.status === "off" ? (
+              <div style={{fontSize:13, color:"var(--text)", lineHeight:1.55}}>
+                <p style={{margin:"0 0 10px"}}>Pick a folder and every change is saved there automatically, a few seconds after you make it. Choose your <b>Google Drive</b> (or OneDrive, Dropbox…) folder and the backups sync to the cloud on their own.</p>
+                <p style={{margin:"0 0 10px", color:"var(--text-dim)"}}>Files: one per day (<code>pm-workload-board-YYYY-MM-DD.json</code>) plus <code>pm-workload-board-latest.json</code>. Restore any of them with <b>Import</b>. Nothing is ever deleted.</p>
+                <p style={{margin:"0 0 16px", color:"var(--text-dim)"}}>After a browser restart Chrome may ask once to resume: choose <i>Allow on every visit</i> to skip that.</p>
+              </div>
+            ) : (
+              <div style={{fontSize:13, color:"var(--text)", lineHeight:1.6, marginBottom:16}}>
+                <div>Folder: <b>{backup.folder}</b></div>
+                <div style={{color:"var(--text-dim)"}}>Last backup: {backup.last ? `${fmtDate(backup.last)} ${fmtTime(backup.last)}` : "not yet in this session"}</div>
+                {backup.status === "error" && <div style={{color:"#F87171", marginTop:6}}>⚠ {backup.error}</div>}
+              </div>
+            )}
+            <div style={{display:"flex", gap:8, justifyContent:"flex-end", flexWrap:"wrap"}}>
+              {backup.status !== "off" && <button onClick={stopBackup} style={{padding:"7px 12px", borderRadius:6, border:"1px solid var(--border)", background:"transparent", color:"var(--text-dim)", fontSize:12, cursor:"pointer"}}>Turn off</button>}
+              {backup.status !== "off" && <button onClick={runBackup} style={{padding:"7px 12px", borderRadius:6, border:"1px solid var(--border)", background:"transparent", color:"var(--text)", fontSize:12, cursor:"pointer"}}>Back up now</button>}
+              <button onClick={chooseBackupFolder} style={{padding:"7px 16px", borderRadius:6, border:"none", background:"#2563EB", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer"}}>
+                {backup.status === "off" ? "Choose folder…" : "Change folder…"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* COPY LINK TOAST */}
       {copyToast && (

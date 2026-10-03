@@ -39,7 +39,12 @@ function load(prefs) {
   });
 }
 
-function check(name, ok, detail) { results.push({ name, ok: !!ok, detail }); }
+// Results go to #result and, when driven by tools/check.py, are POSTed back after every check
+function report(done) {
+  document.getElementById("result").textContent = JSON.stringify(results, null, 1);
+  fetch("/check-result", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ results, done }) }).catch(() => {});
+}
+function check(name, ok, detail) { results.push({ name, ok: !!ok, detail }); report(false); }
 const near = (a, b, tol = 0.02) => Math.abs(a - b) <= Math.abs(b) * tol;
 
 function barPxPerDay(w, taskName) {
@@ -127,6 +132,35 @@ async function run() {
     check("undo: delete toast brings the task back", n1 === n0 - 1 && count() === n0, `${n0} → ${n1} → ${count()}`);
   }
 
+  // 7. Auto-backup: a folder handle stored in IndexedDB is reused on start and written after changes.
+  //    The real picker needs a human, so the test plants an origin-private (OPFS) folder instead.
+  {
+    const root = await navigator.storage.getDirectory();
+    try { await root.removeEntry("pmwb-check", { recursive: true }); } catch {}
+    const dir = await root.getDirectoryHandle("pmwb-check", { create: true });
+    await new Promise((res, rej) => {
+      const r = indexedDB.open("pmwb", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("kv");
+      r.onsuccess = () => { const tx = r.result.transaction("kv", "readwrite"); tx.objectStore("kv").put(dir, "backupDir"); tx.oncomplete = res; tx.onerror = rej; };
+      r.onerror = rej;
+    });
+    w = await load({ ...base, "pm-gantt-density": "detail", "pm-gantt-gran": "week", "pm-gantt-tasksOpen": "1" });
+    const read = async name => { try { return JSON.parse(await (await (await dir.getFileHandle(name)).getFile()).text()); } catch { return null; } };
+    let latest = null;
+    for (let i = 0; i < 30 && !latest; i++) { await wait(200); latest = await read("pm-workload-board-latest.json"); }
+    const today = new Date(); const day = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+    const daily = await read(`pm-workload-board-${day}.json`);
+    check("backup: writes latest + daily file on start", latest && daily && latest.t.length === 9, latest ? latest.t.length + " tasks" : "no file");
+    const btn = [...w.document.querySelectorAll("button")].find(b => b.textContent.startsWith("☁"));
+    check("backup: header shows it is active", btn && btn.textContent.startsWith("☁ Backed up"), btn && btn.textContent);
+    [...w.document.querySelectorAll("button")].find(b => b.textContent === "✕ Del").click();
+    let after = null;
+    for (let i = 0; i < 40 && !(after && after.t.length === 8); i++) { await wait(250); after = await read("pm-workload-board-latest.json"); }
+    check("backup: a change is written within a few seconds", after && after.t.length === 8, after ? after.t.length + " tasks" : "no file");
+    await new Promise(res => { const r = indexedDB.open("pmwb", 1); r.onsuccess = () => { const tx = r.result.transaction("kv", "readwrite"); tx.objectStore("kv").delete("backupDir"); tx.oncomplete = res; }; });
+    await root.removeEntry("pmwb-check", { recursive: true });
+  }
+
   // Extra checks registered by later features
   for (const extra of (window.EXTRA_CHECKS || [])) await extra({ load, base, check, wait });
 
@@ -136,8 +170,8 @@ async function run() {
 run().catch(e => check("harness crashed", false, String(e && e.stack || e)))
   .finally(() => {
     const out = document.getElementById("result");
-    out.textContent = JSON.stringify(results, null, 1);
     out.dataset.done = "1";
+    report(true);
   });
 </script>
 </body>
