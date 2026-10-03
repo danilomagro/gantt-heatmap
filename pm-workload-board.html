@@ -346,8 +346,8 @@ function App() {
   }, [tasks]);
   const fitDayW = Math.max(1, (mainWidth - 40 - LABEL_W - 4) / (fitWeeks * 7));   // 40 = main padding, 4 = borders
   const dayW = overview ? fitDayW
-             : colGran === 'day'   ? DAY_PX
-             : colGran === 'week'  ? WEEK_PX
+             : granularity === 'day'   ? DAY_PX      // the chosen zoom (colGran is derived from dayW below)
+             : granularity === 'week'  ? WEEK_PX
              :                           MONTH_PX;
   // Column scale actually drawn: overview picks weeks or months by available room
   const colGran = overview ? (dayW * 7 >= 44 ? 'week' : 'month') : granularity;
@@ -1450,7 +1450,8 @@ function App() {
                           if (mLeft < 0 || mLeft > sharedTimelineW) return null;
                           return (
                             <div key={m.id} style={{position:"absolute", top:0, bottom:0, left:LABEL_W+mLeft, width:0, borderLeft:`1px dashed ${m.color}B3`, zIndex:1, pointerEvents:"none"}}>
-                              <div style={{position:"absolute", top:5, left:4, fontSize:11, color:m.color, fontWeight:600, whiteSpace:"nowrap", background:"var(--surface-3)", padding:"1px 5px", borderRadius:3}}>◆ {m.name}</div>
+                              {/* label flips to the left of the line when it would run past the timeline end */}
+                              <div style={{position:"absolute", top:5, ...(mLeft + 24 + m.name.length * 7 > sharedTimelineW ? {right:4} : {left:4}), fontSize:11, color:m.color, fontWeight:600, whiteSpace:"nowrap", background:"var(--surface-3)", padding:"1px 5px", borderRadius:3}}>◆ {m.name}</div>
                             </div>
                           );
                         })}
