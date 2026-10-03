@@ -161,6 +161,26 @@ async function run() {
     await root.removeEntry("pmwb-check", { recursive: true });
   }
 
+  // 8. Contrast: every enabled button in the toolbar and sidebar has text >= 4.5:1 (WCAG AA), both themes
+  for (const theme of ["dark", "light"]) {
+    w = await load({ ...base, "pm-gantt-theme": theme, "pm-gantt-tasksOpen": "1", "pm-gantt-density": "detail" });
+    const cs = el => w.getComputedStyle(el);
+    const parse = c => { const m = c.match(/[\d.]+/g).map(Number); return { r: m[0], g: m[1], b: m[2], a: m.length > 3 ? m[3] : 1 }; };
+    const blend = (top, under) => ({ r: top.r * top.a + under.r * (1 - top.a), g: top.g * top.a + under.g * (1 - top.a), b: top.b * top.a + under.b * (1 - top.a), a: 1 });
+    const bgOf = el => { // composite backgrounds from the element up to the page
+      const layers = [];
+      for (let e = el; e; e = e.parentElement) { const c = parse(cs(e).backgroundColor); if (c.a > 0) { layers.push(c); if (c.a === 1) break; } }
+      return layers.reverse().reduce((acc, c) => blend(c, acc), { r: 255, g: 255, b: 255, a: 1 });
+    };
+    const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+    const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+    const buttons = [...w.document.querySelectorAll("header button, header label, aside button")]
+      .filter(b => !b.disabled && b.textContent.trim() && b.offsetParent);
+    const bad = buttons.map(b => ({ t: b.textContent.trim().slice(0, 18), r: ratio(blend(parse(cs(b).color), bgOf(b)), bgOf(b)) }))
+      .filter(x => x.r < 4.5);
+    check(`contrast ${theme}: ${buttons.length} buttons >= 4.5:1`, bad.length === 0, bad.map(x => `${x.t} ${x.r.toFixed(1)}`).join(", "));
+  }
+
   // Extra checks registered by later features
   for (const extra of (window.EXTRA_CHECKS || [])) await extra({ load, base, check, wait });
 
