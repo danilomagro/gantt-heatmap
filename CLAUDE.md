@@ -51,6 +51,12 @@ Solid bar = committed work; light tinted slimmer bar (`LIGHT_BELOW` 50 %) = back
 
 Target is a 1920×1080 office monitor at 100% Windows scaling. Minimum text 11px (10px only for day-view column headers); primary labels 12–13px; no 700/800 weights below 12px.
 
+## Planned later (decided, not started)
+
+- **Italian README**: `README.it.md` next to `README.md`, with a `🇬🇧 English · 🇮🇹 Italiano` switcher at the top of both. Written as native Italian, not a literal translation. Once it exists, every README change must be made in both languages.
+- **Print / PDF for slides** and **per-person capacity** (part-time): see the README backlog.
+- **Usage counter** only if Danilo explicitly asks: privacy-friendly (e.g. GoatCounter, no cookies), on `index.html` only, never inside the app — the README promises nothing leaves the user's machine.
+
 ## Workflow
 
 - Commit and push directly to `master` — **one self-contained commit per improvement** so it can be reverted easily. Keep the branch named `master`.
