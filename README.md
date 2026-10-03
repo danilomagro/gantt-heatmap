@@ -76,13 +76,14 @@ With every task at 100 %, the colours match the number of parallel tasks (1, 2, 
 ## Getting started
 
 - **Online:** open the [live version](https://danilomagro.github.io/gantt-heatmap/pm-workload-board.html).
-- **Locally:** download or clone the repo and double-click `pm-workload-board.html`.
+- **On your computer:** download **`pm-workload-board.html`** from the [latest release](https://github.com/danilomagro/gantt-heatmap/releases/latest) (under *Assets*) and double-click it. One file, nothing to install; internet is needed only the first time, to load React from the CDN.
 
 **Load sample data** (in the empty board) loads a realistic scenario that always lands around today: 3 people, 6 projects, a permanent help-desk rotation, a tentative task, holidays clashing with a delivery, and milestones.
 
 ### Your data
 - Everything is stored in your browser (`localStorage`): no server, no account, nothing uploaded.
 - Data stays in **that** browser on **that** computer. Turn on **☁ Auto-backup** (Chrome / Edge) to keep copies in a folder you choose, such as Google Drive, or use **Export** to save one by hand. **Import** restores either.
+- **The online version and a downloaded copy keep separate data.** Browsers store data per address, so a board built on the website won't appear in the downloaded file, and vice versa. Move it with **Export → Import** (or import an auto-backup file).
 - A share link carries the board inside the link itself (after `#`, which browsers never send to a server). It goes only where you send it.
 
 ### Technical notes
