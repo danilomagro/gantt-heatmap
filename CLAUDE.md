@@ -15,6 +15,7 @@ The heatmap is **derived** from the Gantt, never filled in manually — "the red
 - `index.html` only redirects to the app and carries Open Graph tags. Don't rename or move either file: their URLs are shared publicly.
 - Styling: inline style objects plus CSS custom properties (`--bg`, `--surface`, `--text-dim`, …) defined for `[data-theme="dark"]` and `[data-theme="light"]`. Use the variables, never hard-coded theme colours. Font: Segoe UI / system-ui (no web fonts, must work offline).
 - Layout: the app is exactly `100vh`; `<main>` and the sidebar are the scroll containers (sticky headers depend on it — don't go back to `minHeight`). Section titles stick at top 0, week headers at the measured title height (`useMeasuredHeight`); `.pm-sticky` is reset to static in print. Sidebar sections never get their own scroller (an inner `flex:1` scroller collapses to 0px in the fixed-height column) — the whole sidebar scrolls.
+- Overview (`density === "overview"`): one compact row per group (`renderGanttRow(row, true)`, lanes of `LANE_C` px, no text, move-only drag) and `dayW` fitted so `fitWeeks` fill the width; `colGran` picks week/month headers. Draw with `colGran`, never `granularity`, outside the toolbar.
 - Positioning is driven by `dayW` (px per calendar day: Day 38, Week 80/7, Month 120/30.44). `LABEL_W` is the fixed label column shared by Gantt and heatmap.
 
 ## Data (localStorage)
@@ -33,7 +34,7 @@ Board data under key `pm-gantt-v2`:
 
 - `persist(t, r, c, m, o)` — `o` defaults to `timeOffRef.current`; pass it explicitly when the same handler changes time off. Nothing is written while previewing a shared board (`sharedRef`).
 - `normalizeTasks()` migrates legacy `resourceId` (singular) → `resourceIds[]`. Keep backward compatibility with old exports and share links.
-- UI preferences have their own keys: `pm-gantt-theme`, `pm-gantt-gran`, `pm-gantt-group`, `pm-gantt-tentative`, `pm-gantt-moreOpen`, `pm-gantt-offOpen`, `pm-gantt-resOpen`, `pm-gantt-projOpen`, `pm-gantt-msOpen`, `pm-gantt-tasksOpen`. Wrap every localStorage access in try/catch.
+- UI preferences have their own keys: `pm-gantt-theme`, `pm-gantt-gran`, `pm-gantt-group`, `pm-gantt-tentative`, `pm-gantt-density`, `pm-gantt-moreOpen`, `pm-gantt-offOpen`, `pm-gantt-resOpen`, `pm-gantt-projOpen`, `pm-gantt-msOpen`, `pm-gantt-tasksOpen`. Wrap every localStorage access in try/catch.
 - Heatmap load = Σ(effort × task working days the person is present) / days available (Mon–Fri minus time off), in %. A week fully off shows OFF; a task with effort ≥ `LIGHT_BELOW` on a day off is a ⚠ clash. `LOAD_STEPS` [100,200,300] map load to heat levels 1–4 (an all-100 % board reproduces the old parallel-task scale).
 - Tentative tasks: `pm-gantt-tentative` = hide | show (default: visible, excluded from load, cell outlined) | count (included).
 - Keep task creation light: only name, project, people, dates are visible; optional fields live under "More options" and new tasks inherit effort from the project's latest task.

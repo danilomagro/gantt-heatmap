@@ -158,6 +158,7 @@ const THEME_KEY   = "pm-gantt-theme";
 const GRAN_KEY    = "pm-gantt-gran";
 const GROUP_KEY   = "pm-gantt-group";
 const TENT_KEY    = "pm-gantt-tentative";
+const DENSITY_KEY = "pm-gantt-density";
 
 // px per calendar day for each granularity
 const DAY_PX   = 38;           // day view:   38 px / day
@@ -296,6 +297,11 @@ function App() {
   const [tentMode, setTentMode] = React.useState(() => {
     try { const v = localStorage.getItem(TENT_KEY); return ["hide","show","count"].includes(v) ? v : "show"; } catch { return "show"; }
   });
+  // "detail" (one row per task, labels) | "overview" (one row per group, thin unlabeled bars, fit to width)
+  const [density, setDensity] = React.useState(() => {
+    try { return localStorage.getItem(DENSITY_KEY) === "overview" ? "overview" : "detail"; } catch { return "detail"; }
+  });
+  const overview = density === "overview";
   const [groupBy, setGroupBy] = React.useState(() => {
     try { return localStorage.getItem(GROUP_KEY) === "project" ? "project" : "resource"; } catch { return "resource"; }
   });
@@ -331,9 +337,20 @@ function App() {
   const isSyncing      = React.useRef(false);
 
   // ── pixels per calendar day (drives ALL positioning) ──────────────────────
-  const dayW = granularity === 'day'   ? DAY_PX
-             : granularity === 'week'  ? WEEK_PX
+  // Overview: whole weeks spanned by the tasks (min 8), squeezed into the visible width
+  const fitWeeks = React.useMemo(() => {
+    if (!tasks.length) return 8;
+    const dates = tasks.flatMap(t => [parseDate(t.startDate), parseDate(t.endDate)]);
+    const days = Math.round((Math.max(...dates) - startOfMonday(new Date(Math.min(...dates)))) / 86400000);
+    return Math.max(8, Math.floor(days / 7) + 1);
+  }, [tasks]);
+  const fitDayW = Math.max(1, (mainWidth - 40 - LABEL_W - 4) / (fitWeeks * 7));   // 40 = main padding, 4 = borders
+  const dayW = overview ? fitDayW
+             : colGran === 'day'   ? DAY_PX
+             : colGran === 'week'  ? WEEK_PX
              :                           MONTH_PX;
+  // Column scale actually drawn: overview picks weeks or months by available room
+  const colGran = overview ? (dayW * 7 >= 44 ? 'week' : 'month') : granularity;
 
   // Keep current dayW accessible inside the drag handler's stale closure
   const dayWRef = React.useRef(dayW);
@@ -354,6 +371,11 @@ function App() {
   const changeTentMode = (v) => {
     setTentMode(v);
     try { localStorage.setItem(TENT_KEY, v); } catch {}
+  };
+
+  const changeDensity = (v) => {
+    setDensity(v);
+    try { localStorage.setItem(DENSITY_KEY, v); } catch {}
   };
 
   const changeGroupBy = (g) => {
@@ -427,7 +449,7 @@ function App() {
 
   // ── weeks: always Monday-based (used for heatmap + timelineStart) ─────────
   const weeks = React.useMemo(() => {
-    const minW = Math.max(8, Math.ceil((mainWidth - LABEL_W) / (dayW * 7)));
+    const minW = overview ? fitWeeks : Math.max(8, Math.ceil((mainWidth - LABEL_W) / (dayW * 7)));
     const ws = [];
     if (!tasks.length) {
       let cur = startOfMonday(new Date());
@@ -440,7 +462,7 @@ function App() {
     while (cur <= end) { ws.push(new Date(cur)); cur = addDays(cur,7); }
     while (ws.length < minW) ws.push(addDays(ws[ws.length-1],7));
     return ws;
-  }, [tasks, mainWidth, dayW]);
+  }, [tasks, mainWidth, dayW, overview, fitWeeks]);
 
   const timelineStart = weeks[0];
   const heatColW      = dayW * 7;            // heatmap column = 1 week in px
@@ -451,12 +473,12 @@ function App() {
     if (!weeks.length) return [];
     const tlEnd = addDays(weeks[weeks.length - 1], 7); // exclusive boundary
 
-    if (granularity === 'day') {
+    if (colGran === 'day') {
       const cols = []; let d = new Date(timelineStart);
       while (d < tlEnd) { cols.push(new Date(d)); d = addDays(d, 1); }
       return cols;
     }
-    if (granularity === 'week') {
+    if (colGran === 'week') {
       return weeks.map(w => new Date(w));
     }
     // month: start from 1st of month that contains timelineStart
@@ -464,25 +486,29 @@ function App() {
     let d = new Date(timelineStart.getFullYear(), timelineStart.getMonth(), 1);
     while (d < tlEnd) { cols.push(new Date(d)); d = new Date(d.getFullYear(), d.getMonth()+1, 1); }
     return cols;
-  }, [weeks, granularity, timelineStart]);
+  }, [weeks, colGran, timelineStart]);
 
   // Each Gantt column gets {date, left, width} in pixels
   const ganttColPositions = React.useMemo(() => {
     return ganttColumns.map(col => {
       const left = (col - timelineStart) / 86400000 * dayW;
       let width;
-      if (granularity === 'day') {
+      if (colGran === 'day') {
         width = dayW;
-      } else if (granularity === 'week') {
+      } else if (colGran === 'week') {
         width = dayW * 7;
       } else {
         // calendar month: variable width
         const next = new Date(col.getFullYear(), col.getMonth() + 1, 1);
         width = (next - col) / 86400000 * dayW;
       }
-      return { date: col, left, width };
-    });
-  }, [ganttColumns, timelineStart, dayW, granularity]);
+      // clip to the timeline so header cells (laid out by width) line up with the bars
+      let l = left, w = width;
+      if (l < 0) { w += l; l = 0; }
+      if (overview) w = Math.min(w, heatTimelineW - l);
+      return { date: col, left: l, width: w };
+    }).filter(c => c.width > 0);
+  }, [ganttColumns, timelineStart, dayW, colGran, overview, heatTimelineW]);
 
   const ganttTimelineW = React.useMemo(() => {
     if (!ganttColPositions.length) return 0;
@@ -491,7 +517,7 @@ function App() {
   }, [ganttColPositions]);
 
   // Both scroll areas share the same total px width so scroll-sync works
-  const sharedTimelineW = Math.max(ganttTimelineW, heatTimelineW);
+  const sharedTimelineW = overview ? heatTimelineW : Math.max(ganttTimelineW, heatTimelineW);
 
   // ── bar geometry ──────────────────────────────────────────────────────────
   const barStyle = task => {
@@ -823,7 +849,7 @@ function App() {
   // ── Gantt column header label ─────────────────────────────────────────────
   const ganttColLabel = (col) => {
     const d = col.date;
-    if (granularity === 'day') {
+    if (colGran === 'day') {
       return (
         <>
           {d.getDate()}
@@ -834,7 +860,7 @@ function App() {
         </>
       );
     }
-    if (granularity === 'week') {
+    if (colGran === 'week') {
       return (
         <>
           <span style={{fontWeight:800}}>W{getISOWeek(d)}</span>
@@ -850,7 +876,7 @@ function App() {
   // heatmap column label (always weekly, but label adapts to granularity)
   const heatColLabel = (w) => {
     if (heatColW >= 50) {
-      return granularity === 'week'
+      return colGran === 'week'
         ? `W${getISOWeek(w)}  ${fmtShort(w)}`
         : fmtShort(w);
     }
@@ -932,21 +958,31 @@ function App() {
 
   // One Gantt row: fixed label column + timeline with bars packed into lanes
   const LANE_H = 32;
-  const renderGanttRow = row => {
+  // compact = Overview: one row per group, thin unlabeled bars in tight lanes (details stay in the tooltip)
+  const LANE_C = 13;
+  const renderGanttRow = (row, compact = false) => {
     const { items, lanes } = packLanes(row.tasks);
-    const rowH = lanes * LANE_H + 12;
+    const rowH = compact ? lanes * LANE_C + 10 : lanes * LANE_H + 12;
     return (
-      <div key={row.key} style={{display:"flex", borderTop:"1px solid var(--border-subtle)", minHeight:44}}>
+      <div key={row.key} style={{display:"flex", borderTop: compact ? "1px solid var(--border)" : "1px solid var(--border-subtle)", minHeight: compact ? 30 : 44}}>
         {/* Fixed label column */}
+        {compact ? (
+          <div style={{width:LABEL_W, flexShrink:0, padding:"3px 10px", fontSize:13, fontWeight:700, color:"var(--text-muted)", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--surface-3)", zIndex:3}}>
+            {row.color && <div style={{width:8, height:8, borderRadius:2, background:row.color, flexShrink:0}} />}
+            <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}} title={row.label}>{row.label}</span>
+            <span title={row.badgeTitle} style={{flexShrink:0, borderRadius:9, padding:"1px 7px", fontSize:11, fontWeight:700, ...row.badgeStyle}}>{row.badge}</span>
+          </div>
+        ) : (
         <div style={{width:LABEL_W, flexShrink:0, padding:"3px 10px", fontSize:12, color:"var(--text-dim)", fontStyle: row.muted ? "italic" : "normal", borderRight:"1px solid var(--border)", display:"flex", alignItems:"center", gap:6, position:"sticky", left:0, background:"var(--bg)", zIndex:3}}>
           {row.dot && <div style={{width:7, height:7, borderRadius:2, background:row.dot, flexShrink:0}} />}
           <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}} title={row.label}>{row.label}</span>
         </div>
+        )}
         {/* Timeline area */}
         <div style={{width:sharedTimelineW, height:rowH, position:"relative"}}>
           {/* Column stripes */}
           {ganttColPositions.map((cp, i) => {
-            const isWE = granularity === 'day' && (cp.date.getDay() === 0 || cp.date.getDay() === 6);
+            const isWE = colGran === 'day' && (cp.date.getDay() === 0 || cp.date.getDay() === 6);
             return (isWE || i%2===0) ? (
               <div key={i} style={{position:"absolute", top:0, bottom:0, left:cp.left, width:cp.width,
                 background: isWE ? "var(--weekend-bg)" : "var(--row-alt)"}} />
@@ -963,11 +999,11 @@ function App() {
             const pct = (task.completion != null && task.completion > 0) ? Math.min(100, task.completion) : 0;
             const light = allocOf(task) < LIGHT_BELOW;
             const tent  = !!task.tentative;
-            const top = 9 + lane * LANE_H + (light ? 2 : 0);
+            const top = compact ? 5 + lane * LANE_C + (light ? 1 : 0) : 9 + lane * LANE_H + (light ? 2 : 0);
             return (
               <React.Fragment key={task.id}>
                 {/* Completion strip */}
-                {pct > 0 && <>
+                {pct > 0 && !compact && <>
                   <div style={{position:"absolute", left:bs.left, width:bs.width, height:3, top:top+(light ? 21 : 25), background:"var(--progress-track)", borderRadius:2, zIndex:2}} />
                   <div style={{position:"absolute", left:bs.left, width:`${parseFloat(bs.width)*pct/100}px`, height:3, top:top+(light ? 21 : 25), background:"var(--progress-fill)", borderRadius:2, zIndex:3}} />
                 </>}
@@ -976,13 +1012,13 @@ function App() {
                   onClick={() => { if (!lastDragMovedRef.current) openEditModal(task); lastDragMovedRef.current = false; }}
                   onMouseMove={e => {
                     if (dragRef.current) return;
-                    e.currentTarget.style.cursor = barEdgeMode(e) === "move" ? "grab" : "ew-resize";
+                    e.currentTarget.style.cursor = compact || barEdgeMode(e) === "move" ? "grab" : "ew-resize";
                   }}
                   onMouseDown={e => {
                     if (e.button !== 0) return;
                     e.preventDefault();
                     const el = e.currentTarget;
-                    const mode = barEdgeMode(e);
+                    const mode = compact ? "move" : barEdgeMode(e);
                     const days = Math.round((parseDate(task.endDate) - parseDate(task.startDate)) / 86400000) + 1;
                     dragRef.current = { taskId:task.id, mode, days, startX:e.clientX, origStart:task.startDate, origEnd:task.endDate,
                                         origLeft:parseFloat(el.style.left), origWidth:parseFloat(el.style.width), el, deltaDays:0,
@@ -1008,16 +1044,17 @@ function App() {
                   })()}
                   style={{
                     position:"absolute", ...bs, top,
-                    height: light ? 22 : 26, borderRadius:5,
+                    height: compact ? (light ? 8 : 10) : light ? 22 : 26, borderRadius: compact ? 3 : 5,
                     background: tent ? `repeating-linear-gradient(135deg, ${col}66 0 6px, ${col}1F 6px 12px)` : light ? `${col}33` : col, opacity:0.92,
-                    border: tent ? `1.5px dashed ${col}` : light ? `1px solid ${col}` : "none", borderLeft: tent ? `1.5px dashed ${col}` : light ? `4px solid ${col}` : "none",
-                    display:"flex", alignItems:"center", padding: light ? "0 8px 0 5px" : "0 8px",
+                    border: tent ? `1.5px dashed ${col}` : light ? `1px solid ${col}` : "none", borderLeft: tent ? `1.5px dashed ${col}` : light ? `${compact ? 3 : 4}px solid ${col}` : "none",
+                    display:"flex", alignItems:"center", padding: compact ? 0 : light ? "0 8px 0 5px" : "0 8px",
                     fontSize:12, color: light || tent ? "var(--text)" : "#fff", fontWeight:600, fontStyle: tent ? "italic" : "normal",
                     overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis",
                     cursor:"grab", zIndex:1,
-                    boxShadow: light || tent ? "none" : "0 0 0 1px rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.4)"
+                    boxShadow: light || tent || compact ? "none" : "0 0 0 1px rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.4)"
                   }}
                 >
+                  {!compact && <>
                   {/* By resource the project prefixes the task; it never shrinks first — the task name truncates */}
                   {groupBy === "resource" && <>
                     <span style={{flexShrink:0, maxWidth:"100%", overflow:"hidden", textOverflow:"ellipsis", fontSize:11, fontWeight:600, fontStyle:"normal", letterSpacing:"0.05em", textTransform:"uppercase", opacity:0.75}}>{task.projectName}</span>
@@ -1033,6 +1070,7 @@ function App() {
                   {task.notes && (
                     <div style={{position:"absolute", top:3, right:4, width:5, height:5, borderRadius:"50%", background: light || tent ? col : "#fff", opacity: light || tent ? 0.9 : 0.6, flexShrink:0}} />
                   )}
+                  </>}
                 </div>
               </React.Fragment>
             );
@@ -1060,7 +1098,8 @@ function App() {
           <div style={{width:1, height:18, background:"var(--border)", margin:"0 4px"}} />
           {/* Granularity toggle */}
           {["day","week","month"].map(g => (
-            <button key={g} style={S.btn(granularity===g)} onClick={() => changeGranularity(g)}>
+            <button key={g} style={{...S.btn(granularity===g && !overview), opacity: overview ? 0.45 : 1, cursor: overview ? "not-allowed" : "pointer"}}
+              disabled={overview} title={overview ? "Overview fits the whole timeline to the window" : undefined} onClick={() => changeGranularity(g)}>
               {g.charAt(0).toUpperCase()+g.slice(1)}
             </button>
           ))}
@@ -1349,6 +1388,11 @@ function App() {
                   <div ref={ganttTitleRef} className="pm-sticky" style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, padding:"14px 0 10px", flexWrap:"wrap", position:"sticky", top:0, zIndex:12, background:"var(--bg)"}}>
                     <div style={{...S.sectionTitle, marginBottom:0}}>GANTT — IMPLEMENTATION TIMELINE</div>
                     <div className="no-print" style={{display:"flex", alignItems:"center", gap:6, flexWrap:"wrap"}}>
+                      {[["detail","Detail"],["overview","Overview"]].map(([v, lbl]) => (
+                        <button key={v} style={{...S.btn(density===v), padding:"3px 10px", fontSize:12}} onClick={() => changeDensity(v)}
+                          title={v === "overview" ? "Every task on one screen: one row per group, whole timeline fitted to the width" : "One row per task with labels"}>{lbl}</button>
+                      ))}
+                      <div style={{width:1, height:16, background:"var(--border)", margin:"0 6px"}} />
                       {hasTentative && <>
                         <span style={{fontSize:11, color:"var(--text-dimmer)", fontWeight:600, letterSpacing:"0.08em"}} title="Show: visible but not counted in the heatmap · Count: what-if, included in the load">TENTATIVE</span>
                         {[["hide","Hide"],["show","Show"],["count","Count"]].map(([v, lbl]) => (
@@ -1371,13 +1415,13 @@ function App() {
                         <div ref={ganttHeaderRef} style={{display:"flex"}}>
                           {ganttColPositions.map((col, i) => {
                             const d = col.date;
-                            const isWeekend = granularity === 'day' && (d.getDay() === 0 || d.getDay() === 6);
+                            const isWeekend = colGran === 'day' && (d.getDay() === 0 || d.getDay() === 6);
                             return (
                               <div key={i} style={{
                                 width: col.width,
                                 flexShrink: 0,
-                                padding: granularity === 'day' ? "4px 2px" : "5px 3px",
-                                fontSize: granularity === 'day' ? 10 : 11,
+                                padding: colGran === 'day' ? "4px 2px" : "5px 3px",
+                                fontSize: colGran === 'day' ? 10 : 11,
                                 color: isWeekend ? "var(--text-faint)" : "var(--text-dimmer)",
                                 textAlign: "center",
                                 lineHeight: 1.35,
@@ -1412,7 +1456,20 @@ function App() {
                         })}
 
                         {/* Group rows (by resource or by project) */}
-                        {ganttGroups.map(g => (
+                        {overview && <>
+                          {/* strip that hosts the milestone labels above the first group */}
+                          {milestones.length > 0 && (
+                            <div style={{display:"flex", height:22, background:"var(--surface-3)"}}>
+                              <div style={{width:LABEL_W, flexShrink:0, borderRight:"1px solid var(--border)", position:"sticky", left:0, background:"var(--surface-3)", zIndex:3}} />
+                              <div style={{width:sharedTimelineW}} />
+                            </div>
+                          )}
+                          {ganttGroups.map(g => renderGanttRow({
+                            key: g.key, label: g.name, color: g.color, badge: g.badge, badgeTitle: g.badgeTitle, badgeStyle: g.badgeStyle, resId: g.resId,
+                            tasks: [...new Map(g.rows.flatMap(r => r.tasks).map(t => [t.id, t])).values()],
+                          }, true))}
+                        </>}
+                        {!overview && ganttGroups.map(g => (
                           <div key={g.key}>
                             {/* Group header row */}
                             <div style={{display:"flex", background:"var(--surface-3)", borderTop:"1px solid var(--border)"}}>

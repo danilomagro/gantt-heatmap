@@ -29,6 +29,7 @@ The heatmap is never filled in manually. Red means red because the bars say so.
 |---|---|
 | **Cross-project Gantt** | Timeline grouped by resource, bars coloured by project and labelled `PROJECT · task` in resource view, red line = today, click bar to edit |
 | **Group by Resource / Project** | Toggle the Gantt between person → tasks and project → people involved; overlapping bars stack in lanes, choice saved in localStorage |
+| **Overview mode** | Detail / Overview toggle: Overview shows one row per person (or project) with thin, unlabeled bars stacked in lanes and fits the whole timeline to the window — every task on one screen, ready for a slide. Hover for details, click to edit |
 | **Day / Week / Month zoom** | Switch timeline granularity — day view shows weekends dimmed, week view shows ISO week numbers (W19…), month view gives a bird's-eye overview |
 | **Capacity Heatmap** | Derived automatically from Gantt — resource × week grid showing weekly load as % of capacity (task effort × working days), blue → amber → red |
 | **Effort %** | Optional share of a person's time per task (100 / 50 / 20 % or custom) — a permanent 20 % help-desk duty no longer counts like a full-time project. New tasks inherit the effort of the last task in the same project. Tasks under 50 % are drawn as light, slimmer bars |
@@ -107,6 +108,7 @@ The implementation was handled entirely by **[Claude Code](https://claude.ai)** 
 - [x] Gantt bar tooltip — enriched with duration and completion %
 - [x] Sample data button — inline in empty state, confirmation dialog if data exists
 - [x] Keyboard shortcuts — Enter to submit, Esc to cancel
+- [x] Overview mode — whole board on one screen (one row per group, fit to width); also fixes month headers drifting from the bars
 - [x] Sample data relative to today — today's line always mid-board; adds a 50 % task and completion values
 - [x] Discreet milestones — 1px dashed line drawn under bars, label stays readable
 - [x] SVG chevron on every collapsible section — rotates right → down, theme colour
