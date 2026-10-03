@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PM Workload Board — regression checks</title>
+<style>
+  html, body { margin: 0; font: 13px/1.4 system-ui, sans-serif; }
+  iframe { border: 0; width: 1920px; height: 1080px; display: block; }
+  #result { white-space: pre-wrap; padding: 8px; }
+</style>
+</head>
+<body>
+<!-- Loads the app in an iframe (same origin, so it shares localStorage), runs each case, prints JSON into #result.
+     Driven by tools/check.py through headless Chrome; can also be opened by hand at /tools/check.html -->
+<iframe id="app"></iframe>
+<pre id="result">running…</pre>
+<script>
+const APP = "../pm-workload-board.html";
+const frame = document.getElementById("app");
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const results = [];
+let errors = [];
+
+function load(prefs) {
+  return new Promise(resolve => {
+    localStorage.clear();
+    Object.entries(prefs).forEach(([k, v]) => localStorage.setItem(k, v));
+    frame.onload = async () => {
+      const w = frame.contentWindow;
+      w.addEventListener("error", e => errors.push(String(e.message)));
+      const origErr = w.console.error.bind(w.console);
+      w.console.error = (...a) => { errors.push(a.map(String).join(" ")); origErr(...a); };
+      // Babel compiles the app after load; wait until the board is rendered
+      for (let i = 0; i < 100 && !w.document.querySelector("main"); i++) await wait(100);
+      await wait(400);
+      resolve(w);
+    };
+    frame.src = APP + "?t=" + Date.now();
+  });
+}
+
+function check(name, ok, detail) { results.push({ name, ok: !!ok, detail }); }
+const near = (a, b, tol = 0.02) => Math.abs(a - b) <= Math.abs(b) * tol;
+
+function barPxPerDay(w, taskName) {
+  const d = w.document;
+  const bar = [...d.querySelectorAll("div[title]")].find(x => x.title.startsWith(taskName + "\n"));
+  const t = JSON.parse(w.localStorage.getItem("pm-gantt-v2")).t.find(x => x.taskName === taskName);
+  if (!bar || !t) return NaN;
+  const days = Math.round((new Date(t.endDate) - new Date(t.startDate)) / 864e5) + 1;
+  return bar.getBoundingClientRect().width / days;
+}
+const scrollers = w => [...w.document.querySelectorAll("div")].filter(x => x.style.overflowX === "auto");
+const overflowX = w => Math.max(0, ...scrollers(w).map(s => s.scrollWidth - s.clientWidth));
+const docOverflow = w => { const s = w.document.scrollingElement; return { x: s.scrollWidth - s.clientWidth, y: s.scrollHeight - s.clientHeight }; };
+
+async function run() {
+  // Bootstrap once to get the app's own sample builder
+  let w = await load({});
+  const sample = JSON.stringify(w.buildSampleData());
+  const base = { "pm-gantt-v2": sample, "pm-gantt-theme": "dark", "pm-gantt-group": "resource" };
+
+  // 1. Time scale in every Detail zoom (Day 38 px/day, Week 80 px/week, Month ~120 px/month)
+  for (const [gran, px] of [["day", 38], ["week", 80 / 7], ["month", 120 / 30.44]]) {
+    w = await load({ ...base, "pm-gantt-gran": gran, "pm-gantt-density": "detail" });
+    const got = barPxPerDay(w, "ETL pipelines");
+    check(`detail ${gran}: ${px.toFixed(2)} px/day`, near(got, px), got.toFixed(2));
+    const o = docOverflow(w);
+    check(`detail ${gran}: page itself does not scroll`, o.x <= 0 && o.y <= 0, JSON.stringify(o));
+  }
+
+  // 2. Overview fits the width, in both groupings and both themes
+  for (const group of ["resource", "project"]) for (const theme of ["dark", "light"]) {
+    w = await load({ ...base, "pm-gantt-density": "overview", "pm-gantt-group": group, "pm-gantt-theme": theme });
+    check(`overview ${group}/${theme}: no horizontal overflow`, overflowX(w) <= 1, overflowX(w) + "px");
+    const bars = [...w.document.querySelectorAll("div[title]")].filter(x => /\n/.test(x.title) && x.style.position === "absolute");
+    check(`overview ${group}/${theme}: bars are thin and unlabeled`, bars.length > 0 && bars.every(b => b.getBoundingClientRect().height <= 10.5 && b.textContent === ""), bars.length + " bars");
+  }
+
+  // 3. Sample data lands around today
+  w = await load({ ...base, "pm-gantt-density": "detail", "pm-gantt-gran": "week" });
+  const todayLine = [...w.document.querySelectorAll("div")].some(x => x.style.background === "rgba(239, 68, 68, 0.5)");
+  check("sample data: today line visible", todayLine);
+
+  // 4. Sidebar: TASKS never collapses to 0 px with every section open
+  w = await load({ ...base, "pm-gantt-resOpen": "1", "pm-gantt-projOpen": "1", "pm-gantt-msOpen": "1",
+                  "pm-gantt-offOpen": "1", "pm-gantt-moreOpen": "1", "pm-gantt-tasksOpen": "1" });
+  const aside = w.document.querySelector("aside");
+  const tasksBox = [...aside.children].find(c => c.textContent.startsWith("TASKS"));
+  check("sidebar: TASKS visible with all sections open", tasksBox && tasksBox.getBoundingClientRect().height > 100,
+        tasksBox ? Math.round(tasksBox.getBoundingClientRect().height) + "px" : "missing");
+  check("sidebar: no horizontal scrollbar", aside.scrollWidth <= aside.clientWidth, aside.scrollWidth + "/" + aside.clientWidth);
+
+  // 5. Sticky headers: after scrolling <main>, the week row stays below the title
+  w = await load({ ...base, "pm-gantt-density": "detail", "pm-gantt-gran": "week" });
+  const d = w.document, main = d.querySelector("main");
+  main.scrollTop = 300; await wait(150);
+  const title = [...d.querySelectorAll("div")].find(x => x.textContent === "GANTT — IMPLEMENTATION TIMELINE").parentElement;
+  const hdr = [...d.querySelectorAll("div")].find(x => x.textContent === "Resource / Task").parentElement;
+  const tr = title.getBoundingClientRect(), hr = hdr.getBoundingClientRect(), mr = main.getBoundingClientRect();
+  check("sticky: title pinned to top of main", Math.abs(tr.top - mr.top) <= 1, `${tr.top} vs ${mr.top}`);
+  check("sticky: week header right below title", Math.abs(hr.top - tr.bottom) <= 1, `${hr.top} vs ${tr.bottom}`);
+
+  // Extra checks registered by later features
+  for (const extra of (window.EXTRA_CHECKS || [])) await extra({ load, base, check, wait });
+
+  check("no console errors", errors.length === 0, errors.slice(0, 3).join(" | "));
+}
+
+run().catch(e => check("harness crashed", false, String(e && e.stack || e)))
+  .finally(() => {
+    const out = document.getElementById("result");
+    out.textContent = JSON.stringify(results, null, 1);
+    out.dataset.done = "1";
+  });
+</script>
+</body>
+</html>
