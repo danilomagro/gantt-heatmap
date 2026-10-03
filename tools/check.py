@@ -43,6 +43,8 @@ class QuietHandler(SimpleHTTPRequestHandler):
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # Windows consoles default to cp1252
     server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=ROOT))
     port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -51,9 +53,9 @@ def main():
     try:
         out = subprocess.run(
             [find_chrome(), "--headless=new", f"--user-data-dir={profile}", "--window-size=1920,1180",
-             "--force-device-scale-factor=1", "--virtual-time-budget=60000", "--dump-dom",
+             "--force-device-scale-factor=1", "--virtual-time-budget=300000", "--dump-dom",
              f"http://127.0.0.1:{port}/tools/check.html"],
-            capture_output=True, text=True, encoding="utf-8", timeout=180,
+            capture_output=True, text=True, encoding="utf-8", timeout=300,
         ).stdout
     finally:
         server.shutdown()

@@ -421,8 +421,7 @@ function App() {
       }
     } catch {}
     // Normal: load own data from localStorage
-    const r = storage.get(STORAGE_KEY);
-    if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); setTimeOff(d.o||[]); } catch {} }
+    loadOwnBoard();
   }, []);
 
   // While previewing a shared board nothing is written — the viewer's own board stays intact
@@ -430,20 +429,66 @@ function App() {
   // Time off rides along with every save; handlers that change it pass it explicitly
   const timeOffRef = React.useRef([]);
   timeOffRef.current = timeOff;
-  const persist = (t, r, c, m, o = timeOffRef.current) => { if (!sharedRef.current) storage.set(STORAGE_KEY, JSON.stringify({ t, r, c, m, o })); };
+  // ── persistence + undo history ──────────────────────────────────────────────
+  // Every save pushes the previous saved board (as JSON) on the undo stack, so any change —
+  // drag, edit, confirm, add, delete, import, clear — can be undone. Everything here uses refs and
+  // state setters only, so stale closures (drag handler, keyboard handler) stay correct.
+  const UNDO_MAX   = 50;
+  const savedRef   = React.useRef(null);   // JSON of the board currently in storage (null until loaded)
+  const undoStack  = React.useRef([]);
+  const redoStack  = React.useRef([]);
+  const [, setHistVer] = React.useState(0);  // re-render the ↶ ↷ buttons
 
-  // ── undo ──────────────────────────────────────────────────────────────────
-  const saveUndo = (label, t, r, c, m, o = timeOffRef.current) => {
+  const persist = (t, r, c, m, o = timeOffRef.current) => {
+    if (sharedRef.current) return;
+    const json = JSON.stringify({ t, r, c, m, o });
+    if (json === savedRef.current) return;
+    if (savedRef.current !== null) {
+      undoStack.current.push(savedRef.current);
+      if (undoStack.current.length > UNDO_MAX) undoStack.current.shift();
+      redoStack.current = [];
+    }
+    savedRef.current = json;
+    storage.set(STORAGE_KEY, json);
+    setHistVer(v => v + 1);
+  };
+
+  const applyBoard = json => {
+    const d = JSON.parse(json);
+    setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); setTimeOff(d.o||[]);
+    savedRef.current = json;
+    storage.set(STORAGE_KEY, json);
+    setHistVer(v => v + 1);
+  };
+  const undo = () => {
+    if (sharedRef.current || !undoStack.current.length) return;
+    redoStack.current.push(savedRef.current);
+    applyBoard(undoStack.current.pop());
+    setUndoSnapshot(null);
+  };
+  const redo = () => {
+    if (sharedRef.current || !redoStack.current.length) return;
+    undoStack.current.push(savedRef.current);
+    applyBoard(redoStack.current.pop());
+  };
+
+  const loadOwnBoard = () => {
+    const r = storage.get(STORAGE_KEY);
+    const empty = JSON.stringify({ t:[], r:[], c:{}, m:[], o:[] });
+    let json = empty;
+    if (r) { try { JSON.parse(r.value); json = r.value; } catch {} }
+    undoStack.current = []; redoStack.current = [];
+    applyBoard(json);
+  };
+
+  // Toast after a deletion; its Undo button is just the first step of the history
+  const saveUndo = label => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    setUndoSnapshot({ label, t, r, c, m, o });
+    setUndoSnapshot({ label });
     undoTimerRef.current = setTimeout(() => setUndoSnapshot(null), 5000);
   };
   const performUndo = () => {
-    if (!undoSnapshot) return;
-    const { t, r, c, m, o } = undoSnapshot;
-    setTasks(t); setResources(r); setPColors(c); setMilestones(m); setTimeOff(o||[]);
-    persist(t, r, c, m, o||[]);
-    setUndoSnapshot(null);
+    undo();
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
   };
 
@@ -669,6 +714,15 @@ function App() {
   React.useEffect(() => {
     const handler = e => {
       if (e.key === "Escape") { setEditModal(null); cancelForm(); }
+      // Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z — but leave text fields their own undo
+      if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+        const k = e.key.toLowerCase();
+        const typing = e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]');
+        if (!typing && (k === "z" || k === "y")) {
+          e.preventDefault();
+          if (k === "y" || e.shiftKey) redo(); else undo();
+        }
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -787,14 +841,12 @@ function App() {
     setSharedData(null); sharedRef.current = false;
     history.replaceState(null, "", location.href.split("#")[0]);
     // Reload own data from localStorage
-    const r = storage.get(STORAGE_KEY);
-    if (r) { try { const d = JSON.parse(r.value); setTasks(normalizeTasks(d.t)); setResources(d.r||[]); setPColors(d.c||{}); setMilestones(d.m||[]); setTimeOff(d.o||[]); } catch {} }
-    else { setTasks([]); setResources([]); setPColors({}); setMilestones([]); setTimeOff([]); }
+    loadOwnBoard();
   };
 
   // ── clear board ───────────────────────────────────────────────────────────
   const clearBoard = () => {
-    if (!window.confirm("Delete all tasks, resources and milestones?\nThis cannot be undone.")) return;
+    if (!window.confirm("Delete all tasks, resources, milestones and time off?\nYou can bring it back with Undo (Ctrl+Z) until you close the page.")) return;
     setTasks([]); setResources([]); setPColors({}); setMilestones([]); setTimeOff([]);
     persist([], [], {}, [], []);
   };
@@ -1103,6 +1155,11 @@ function App() {
               {g.charAt(0).toUpperCase()+g.slice(1)}
             </button>
           ))}
+          <div style={{width:1, height:18, background:"var(--border)", margin:"0 4px"}} />
+          <button onClick={undo} disabled={!undoStack.current.length || !!sharedData} title="Undo last change (Ctrl+Z)"
+            style={{...S.btn(false), opacity: undoStack.current.length && !sharedData ? 1 : 0.4, cursor: undoStack.current.length && !sharedData ? "pointer" : "default"}}>↶</button>
+          <button onClick={redo} disabled={!redoStack.current.length || !!sharedData} title="Redo (Ctrl+Y)"
+            style={{...S.btn(false), opacity: redoStack.current.length && !sharedData ? 1 : 0.4, cursor: redoStack.current.length && !sharedData ? "pointer" : "default"}}>↷</button>
           <div style={{width:1, height:18, background:"var(--border)", margin:"0 4px"}} />
           <button onClick={toggleTheme} title={theme==="dark"?"Switch to light theme":"Switch to dark theme"} style={S.btn(false)}>
             {theme==="dark" ? "☀" : "🌙"}

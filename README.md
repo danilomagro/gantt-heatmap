@@ -30,6 +30,7 @@ The heatmap is never filled in by hand. Red means red because the bars say so.
 - **Cross-project Gantt**, grouped **by person** (bars read `PROJECT · task`) or **by project** (people involved underneath)
 - **Drag** bars to reschedule, **drag an edge** to change start or end, **click** to edit
 - **Multi-person tasks**, **notes**, **completion %**, **milestones** (go-live, UAT freeze…)
+- **Undo / redo** any change: drags, edits, deletions, even Clear board (**Ctrl+Z** / **Ctrl+Y**, or ↶ ↷)
 - **Day / Week / Month** zoom, and **Overview**: one row per person or project, thin bars, the whole timeline fitted to the window. Every task on one screen, ready for a slide
 
 ### Read the load honestly
@@ -93,7 +94,7 @@ With every task at 100 %, the colours match the number of parallel tasks (1, 2, 
 
 See the full history on the **[Releases page](https://github.com/danilomagro/gantt-heatmap/releases)**.
 
-Latest additions: Overview mode, sticky headers, project name on bars, sample data relative to today, discreet milestones, collapsible Projects section.
+Latest additions: undo / redo for every change, Overview mode, sticky headers, project name on bars, sample data relative to today, discreet milestones, collapsible Projects section.
 
 ### Backlog
 

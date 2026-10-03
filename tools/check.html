@@ -101,6 +101,32 @@ async function run() {
   check("sticky: title pinned to top of main", Math.abs(tr.top - mr.top) <= 1, `${tr.top} vs ${mr.top}`);
   check("sticky: week header right below title", Math.abs(hr.top - tr.bottom) <= 1, `${hr.top} vs ${tr.bottom}`);
 
+  // 6. Undo / redo: a drag is undone by Ctrl+Z and redone by Ctrl+Y; the delete toast restores too
+  w = await load({ ...base, "pm-gantt-density": "detail", "pm-gantt-gran": "week", "pm-gantt-tasksOpen": "1" });
+  {
+    const doc = w.document;
+    const etl = () => JSON.parse(w.localStorage.getItem("pm-gantt-v2")).t.find(x => x.taskName === "ETL pipelines");
+    const bar = [...doc.querySelectorAll("div[title]")].find(x => x.title.startsWith("ETL pipelines" + String.fromCharCode(10)));
+    const before = etl().startDate, r = bar.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + 8;
+    bar.dispatchEvent(new w.MouseEvent("mousedown", { bubbles: true, clientX: x, clientY: y, button: 0 }));
+    w.dispatchEvent(new w.MouseEvent("mousemove", { clientX: x + 80, clientY: y }));
+    w.dispatchEvent(new w.MouseEvent("mouseup", { clientX: x + 80, clientY: y }));
+    await wait(200);
+    const moved = etl().startDate;
+    w.dispatchEvent(new w.KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true })); await wait(200);
+    const undone = etl().startDate;
+    w.dispatchEvent(new w.KeyboardEvent("keydown", { key: "y", ctrlKey: true, bubbles: true })); await wait(200);
+    const redone = etl().startDate;
+    check("undo: Ctrl+Z restores a dragged bar", moved !== before && undone === before, `${before} → ${moved} → ${undone}`);
+    check("undo: Ctrl+Y re-applies it", redone === moved, redone);
+    const count = () => JSON.parse(w.localStorage.getItem("pm-gantt-v2")).t.length;
+    const n0 = count();
+    [...doc.querySelectorAll("button")].find(b => b.textContent === "✕ Del").click(); await wait(200);
+    const n1 = count();
+    [...doc.querySelectorAll("button")].find(b => b.textContent === "Undo").click(); await wait(200);
+    check("undo: delete toast brings the task back", n1 === n0 - 1 && count() === n0, `${n0} → ${n1} → ${count()}`);
+  }
+
   // Extra checks registered by later features
   for (const extra of (window.EXTRA_CHECKS || [])) await extra({ load, base, check, wait });
 

@@ -32,7 +32,7 @@ Board data under key `pm-gantt-v2`:
 }
 ```
 
-- `persist(t, r, c, m, o)` — `o` defaults to `timeOffRef.current`; pass it explicitly when the same handler changes time off. Nothing is written while previewing a shared board (`sharedRef`).
+- `persist(t, r, c, m, o)` — `o` defaults to `timeOffRef.current`; pass it explicitly when the same handler changes time off. Every persist pushes the previous saved JSON on the undo stack (`undoStack`/`redoStack`, max 50, session only); route all board changes through `persist` so they are undoable, and restore through `applyBoard`. Nothing is written while previewing a shared board (`sharedRef`).
 - `normalizeTasks()` migrates legacy `resourceId` (singular) → `resourceIds[]`. Keep backward compatibility with old exports and share links.
 - UI preferences have their own keys: `pm-gantt-theme`, `pm-gantt-gran`, `pm-gantt-group`, `pm-gantt-tentative`, `pm-gantt-density`, `pm-gantt-moreOpen`, `pm-gantt-offOpen`, `pm-gantt-resOpen`, `pm-gantt-projOpen`, `pm-gantt-msOpen`, `pm-gantt-tasksOpen`. Wrap every localStorage access in try/catch.
 - Heatmap load = Σ(effort × task working days the person is present) / days available (Mon–Fri minus time off), in %. A week fully off shows OFF; a task with effort ≥ `LIGHT_BELOW` on a day off is a ⚠ clash. `LOAD_STEPS` [100,200,300] map load to heat levels 1–4 (an all-100 % board reproduces the old parallel-task scale).
