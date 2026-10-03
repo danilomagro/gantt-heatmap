@@ -1,139 +1,121 @@
 # ◈ PM WORKLOAD BOARD
 
 [![Live demo](https://img.shields.io/badge/demo-live-2563EB)](https://danilomagro.github.io/gantt-heatmap/pm-workload-board.html)
+[![Latest release](https://img.shields.io/github/v/release/danilomagro/gantt-heatmap?color=8338EC)](https://github.com/danilomagro/gantt-heatmap/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-06D6A0)](LICENSE)
 ![No build step](https://img.shields.io/badge/build-none%20needed-FFB703)
 [![Built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-D97757)](https://claude.com/claude-code)
 
 > *"If the team looks slow, show them the bars. If they still don't believe you, show them the heatmap."*
 
-**[→ Open live version](https://danilomagro.github.io/gantt-heatmap/pm-workload-board.html)**
+A **cross-project Gantt and capacity heatmap** for project managers running many implementations in parallel. One HTML file: no backend, no install, no account.
 
-A single-file **cross-project Gantt and capacity heatmap tool** for project managers handling multiple simultaneous implementations. No backend, no dependencies to install, no build step. Just open `pm-workload-board.html`.
+**[→ Open the live version](https://danilomagro.github.io/gantt-heatmap/pm-workload-board.html)** and click **Load sample data**.
 
 ![PM Workload Board preview](preview.png)
 
 ---
 
-## The problem it solves
+## Why it exists
 
-Managing 5+ parallel implementations across a team? When management asks why delivery is slow, gut feeling doesn't cut it. This tool gives you an **objective, inattackable visual** — a Gantt that shows what's running and when, and a heatmap that derives team load automatically from the same data.
+When management asks why delivery is slow, gut feeling doesn't cut it. This board gives you an **objective, unassailable picture**: a Gantt of what runs when and who is on it, and a heatmap of each person's weekly load **computed from those same bars**.
 
-The heatmap is never filled in manually. Red means red because the bars say so.
-
----
-
-## Features
-
-| | |
-|---|---|
-| **Cross-project Gantt** | Timeline grouped by resource, bars coloured by project and labelled `PROJECT · task` in resource view, red line = today, click bar to edit |
-| **Group by Resource / Project** | Toggle the Gantt between person → tasks and project → people involved; overlapping bars stack in lanes, choice saved in localStorage |
-| **Overview mode** | Detail / Overview toggle: Overview shows one row per person (or project) with thin, unlabeled bars stacked in lanes and fits the whole timeline to the window — every task on one screen, ready for a slide. Hover for details, click to edit |
-| **Day / Week / Month zoom** | Switch timeline granularity — day view shows weekends dimmed, week view shows ISO week numbers (W19…), month view gives a bird's-eye overview |
-| **Capacity Heatmap** | Derived automatically from Gantt — resource × week grid showing weekly load as % of capacity (task effort × working days), blue → amber → red |
-| **Effort %** | Optional share of a person's time per task (100 / 50 / 20 % or custom) — a permanent 20 % help-desk duty no longer counts like a full-time project. New tasks inherit the effort of the last task in the same project. Tasks under 50 % are drawn as light, slimmer bars |
-| **Resource & Project filters** | Focus either view on one person or one project — filters compose, heatmap always shows real total load |
-| **Multi-resource tasks** | Assign a task to multiple people — load propagates to each resource in both views |
-| **Milestone markers** | Thin dashed vertical lines under the bars, with custom label and colour — go-live dates, UAT freezes, deployment windows |
-| **Task notes** | Optional free-text notes per task, visible on hover, with a subtle dot indicator on the bar |
-| **Completion %** | Optional progress field per task — thin strip below the Gantt bar, high-contrast colour |
-| **Drag & drop rescheduling** | Drag bars left/right to shift task dates, or drag either edge to change start/end; click without moving still opens edit |
-| **Time off** | Log holidays or sick leave per person — hatched blocks on the Gantt, capacity reduced in the heatmap. Load is measured on the days a person is present (background duties pause); a main task scheduled during time off is flagged ⚠ |
-| **Tentative tasks** | Mark unconfirmed work as tentative — striped, dashed bars. Hide / Show / Count toggle: shown but not counted by default (heatmap cells flag the extra load with a dashed outline), or counted for a what-if view. One-click ✓ Confirm |
-| **Light / Dark theme** | Toggle between themes, preference saved in localStorage |
-| **Share link** | Encode the whole board in a URL — recipients open it without touching their own data (changes aren't saved) and can import it into their board with one click |
-| **Clear board** | Wipe all data in one step (with confirmation) to start fresh |
-| **Export / Import JSON** | Full data portability — sync between devices or share snapshots with your team |
-| **Print / PDF export** | Browser print dialog, landscape layout, sidebar hidden, colours preserved |
-| **Synchronized horizontal scroll** | Both views scroll in sync when tasks span many weeks; resource column stays fixed, section titles and week headers stay pinned while scrolling down |
-| **Keyboard shortcuts** | Enter to submit task form, Esc to cancel |
-| **Sample data** | One-click load of a realistic scenario that always lands around today — shows effort %, a tentative task, time off clashes, completion and milestones |
+The heatmap is never filled in by hand. Red means red because the bars say so.
 
 ---
 
-## Usage
+## What it does
 
-```bash
-git clone https://github.com/danilomagro/gantt-heatmap.git
-cd gantt-heatmap
+### Plan the work
+- **Cross-project Gantt**, grouped **by person** (bars read `PROJECT · task`) or **by project** (people involved underneath)
+- **Drag** bars to reschedule, **drag an edge** to change start or end, **click** to edit
+- **Multi-person tasks**, **notes**, **completion %**, **milestones** (go-live, UAT freeze…)
+- **Day / Week / Month** zoom, and **Overview**: one row per person or project, thin bars, the whole timeline fitted to the window. Every task on one screen, ready for a slide
+
+### Read the load honestly
+- **Effort %** per task: a permanent 20 % help-desk duty adds 20 %, not a whole parallel task. Tasks under 50 % are drawn as light, slimmer bars
+- **Time off** (holidays, sick leave): hatched on the Gantt; the heatmap measures load only on the days people are present and flags ⚠ when real work falls during time off
+- **Tentative tasks**: striped bars for work not confirmed yet. Show them without counting them, hide them, or count them for a *"what if they confirm?"* view. One click to confirm
+- **Filters** by person and project; the heatmap always shows each person's real total load
+
+### Share it
+- **Share link**: the whole board encoded in a URL. Recipients get a preview that never touches their own board, and can import it with one click
+- **Export / Import JSON**, **Print / PDF**
+- **Light / dark theme**, readable on a standard 1080p office monitor
+
+---
+
+## How the load is calculated
+
+This is the part to show when someone asks *"why is this red?"*
+
+For each person and each week:
+
+```
+load % = Σ (task effort % × task working days the person is present)  ÷  working days available
 ```
 
-Open `pm-workload-board.html` in your browser — no server needed, works offline after first load.
+- **Working days** are Monday–Friday. **Days available** = 5 minus the person's time off that week.
+- A task without an effort value counts as **100 %**.
+- During time off no work happens: background duties pause, and a task with effort ≥ 50 % scheduled on a day off is flagged **⚠**. A week fully off shows **OFF**.
+- **Tentative** tasks are excluded unless the *Count* toggle is on; cells where they would add load get a dashed outline.
 
-**To try it immediately**: click **Load sample data** in the empty state — a realistic 18-week scenario across 3 resources, 5 projects, and 3 milestones loads instantly. No file needed.
+| Colour | Weekly load |
+|---|---|
+| Blue | up to 100 % |
+| Amber | 101–200 % |
+| Orange | 201–300 % |
+| Red | over 300 % |
 
----
-
-## Technical notes
-
-- Single HTML file — React 18 + Babel standalone loaded from CDN, everything else self-contained
-- Data stored in `localStorage` — survives page reloads, no account required
-- Nothing leaves your machine
-
----
-
-## The making of
-
-Most tools like this don't exist as single HTML files you can double-click. They're SaaS products, Jira plugins, or Excel macros that require setup, licenses, or IT approval.
-
-This one started as a real need — a PM who wanted something lightweight, portable, and credible enough to show to management. No setup, no explanations required.
-
-The implementation was handled entirely by **[Claude Code](https://claude.ai)** (Anthropic) through an iterative session. No code was written by hand — every feature was specified, refined, and corrected through natural language.
-
-> **[Danilo Magro](https://www.linkedin.com/in/danilo-magro/)**'s role: the problem, the vision, the UX decisions, and the relentless "yes but what if..."  
-> Claude's role: everything that runs in the browser.
+With every task at 100 %, the colours match the number of parallel tasks (1, 2, 3, 4+).
 
 ---
 
-## Status
+## Getting started
 
-🚧 **Work in progress** — actively developed.
+- **Online:** open the [live version](https://danilomagro.github.io/gantt-heatmap/pm-workload-board.html).
+- **Locally:** download or clone the repo and double-click `pm-workload-board.html`.
 
-### Recently shipped
+**Load sample data** (in the empty board) loads a realistic scenario that always lands around today: 3 people, 6 projects, a permanent help-desk rotation, a tentative task, holidays clashing with a delivery, and milestones.
 
-- [x] Resources section: collapsible + chip display
-- [x] Milestones section: collapsible
-- [x] Tasks section: collapsible
-- [x] Collapsible headers: full-row hover + larger chevron (∨/›)
-- [x] Sidebar toggle button (☰ in header)
-- [x] Undo toast for accidental task / resource / milestone deletions (5 s window)
-- [x] Task list sorted by start date
-- [x] Date validation — end date must be ≥ start date
-- [x] Import validation — structural check before accepting a JSON file
-- [x] Persistent sidebar section state — collapsed/expanded remembered across reloads
-- [x] Favicon — inline SVG emoji, no extra files needed
-- [x] Drag & drop rescheduling — drag bars to shift dates, click still opens edit form
-- [x] Completion % — optional field, strip below bar, high-contrast colour per theme
-- [x] Gantt bar tooltip — enriched with duration and completion %
-- [x] Sample data button — inline in empty state, confirmation dialog if data exists
-- [x] Keyboard shortcuts — Enter to submit, Esc to cancel
-- [x] Overview mode — whole board on one screen (one row per group, fit to width); also fixes month headers drifting from the bars
-- [x] Sample data relative to today — today's line always mid-board; adds a 50 % task and completion values
-- [x] Discreet milestones — 1px dashed line drawn under bars, label stays readable
-- [x] SVG chevron on every collapsible section — rotates right → down, theme colour
-- [x] Projects section collapsible like the others (open by default — it's the colour legend)
-- [x] Sticky Gantt / heatmap headers — title and week row stay visible on long boards; sidebar scrolls independently
-- [x] Project name on bars in resource view — truncates the task name first on short bars
-- [x] Time off — hatched blocks, capacity-aware heatmap, ⚠ clash warnings
-- [x] Tentative tasks — striped bars, Hide / Show / Count toggle, one-click confirm
-- [x] Low-effort tasks (< 50 %) drawn as light, slimmer bars
-- [x] Effort % per task + heatmap in % of capacity — optional fields folded under "More options" so adding a task stays four fields
-- [x] Resize bars by dragging their edges — change start or end date directly on the Gantt
-- [x] Typography pass — minimum 11px text, 12–13px primary labels (Fluent 2 / Material 3 scale), taller Gantt bars; much sharper on 1080p monitors
-- [x] Share link — board encoded in URL, opens as a non-saving preview with "Import to my board"
-- [x] Gantt grouping toggle — group by resource or by project (people involved per project, unassigned tasks shown separately)
-- [x] Day / Week / Month granularity toggle — switch timeline zoom; ISO week numbers (W19, W20…) in week view; weekend columns dimmed in day view; preference saved in localStorage
+### Your data
+- Everything is stored in your browser (`localStorage`): no server, no account, nothing uploaded.
+- Data stays in **that** browser on **that** computer. Use **Export** to keep a copy or move between machines.
+- A share link carries the board inside the link itself (after `#`, which browsers never send to a server). It goes only where you send it.
+
+### Technical notes
+- Single HTML file: React 18 and Babel standalone from a CDN, everything else inline. Internet is needed on first load, then the browser cache usually covers it.
+- Developer and AI-assistant notes live in [`CLAUDE.md`](CLAUDE.md).
+
+---
+
+## What's new
+
+See the full history on the **[Releases page](https://github.com/danilomagro/gantt-heatmap/releases)**.
+
+Latest additions: Overview mode, sticky headers, project name on bars, sample data relative to today, discreet milestones, collapsible Projects section.
 
 ### Backlog
 
 | Priority | Item |
 |---|---|
-| Medium | Print layout optimisation for large datasets — auto-scale or date range selector |
+| Medium | **Print / PDF for slides**: one clean landscape page from the Overview (compact Gantt + heatmap), auto-scaled for large boards |
+| Medium | **Per-person capacity**: part-time people (e.g. 4 days out of 5) so their load isn't understated |
+
+---
+
+## The making of
+
+Tools like this usually come as SaaS products, Jira plugins or Excel macros that need setup, licences or IT approval. This one started from a real need: a PM wanting something lightweight, portable and credible enough to put in front of management.
+
+It was built entirely with **[Claude Code](https://claude.com/claude-code)** (Anthropic) through iterative sessions. No code was written by hand: every feature was specified, refined and corrected in natural language.
+
+> **[Danilo Magro](https://www.linkedin.com/in/danilo-magro/)**'s role: the problem, the vision, the UX decisions, and the relentless "yes but what if…"
+> Claude's role: everything that runs in the browser.
 
 ---
 
 ## License
 
-MIT — do whatever you want with it.  
+MIT, do whatever you want with it.
 If you're a PM drowning in parallel projects, I hope this helps.
